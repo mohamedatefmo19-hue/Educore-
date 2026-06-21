@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
+  <title>EduCore · Lessons Management</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
+  <!-- Shared styles -->
+  <link rel="stylesheet" href="shared.css">
+  
+  <style>
+    body {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: var(--card-bg);
+      border-right: 1px solid var(--border);
+      padding: 2rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      transition: background 0.2s, border 0.2s;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin-bottom: 2.5rem;
+    }
+    .sidebar-logo i {
+      font-size: 1.8rem;
+      color: var(--primary);
+      background: rgba(42,125,225,0.1);
+      padding: 0.6rem;
+      border-radius: 14px;
+    }
+    .sidebar-logo span {
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+    .sidebar-logo span small { color: var(--primary); }
+    .sidebar nav { flex: 1; }
+    .sidebar nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.8rem 1rem;
+      border-radius: 12px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: 0.15s;
+      margin-bottom: 0.3rem;
+    }
+    .sidebar nav a i { width: 1.4rem; }
+    .sidebar nav a:hover,
+    .sidebar nav a.active {
+      background: rgba(42,125,225,0.1);
+      color: var(--primary);
+    }
+    .sidebar-footer {
+      border-top: 1px solid var(--border);
+      padding-top: 1.2rem;
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      transition: 0.15s;
+    }
+    .sidebar-footer:hover { color: #e74c3c; }
+
+    .main {
+      flex: 1;
+      padding: 1.8rem 2rem 2.5rem;
+      overflow-x: hidden;
+    }
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .navbar h1 { font-size: 1.7rem; font-weight: 700; }
+    .navbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+    }
+    .navbar-actions button {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .navbar-actions button:hover { color: var(--primary); }
+    .lang-dark { display: flex; gap: 0.6rem; }
+    .lang-dark button {
+      background: none;
+      border: none;
+      font-weight: 600;
+      color: var(--primary);
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .lang-dark .dark-toggle { color: var(--text-secondary); }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.8rem;
+      align-items: center;
+    }
+    .toolbar .search-box {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1.5px solid var(--border);
+      border-radius: 40px;
+      padding: 0.4rem 0.4rem 0.4rem 1.2rem;
+      transition: 0.15s;
+    }
+    .toolbar .search-box:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(42,125,225,0.1);
+    }
+    .toolbar .search-box input {
+      border: none;
+      background: transparent;
+      padding: 0.6rem 0;
+      flex: 1;
+      font-size: 0.95rem;
+      outline: none;
+      color: var(--text);
+    }
+    .toolbar .search-box button {
+      background: var(--primary);
+      border: none;
+      color: white;
+      padding: 0.5rem 1.2rem;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .toolbar .search-box button:hover { background: var(--primary-hover); }
+    .filter-group {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+    .filter-group select {
+      padding: 0.6rem 1.2rem;
+      border-radius: 40px;
+      border: 1.5px solid var(--border);
+      background: var(--card-bg);
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.4rem;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--text);
+      border: none;
+      padding: 0.6rem 1.4rem;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+    }
+    .btn-secondary:hover { background: var(--border); }
+
+    .table-wrapper {
+      background: var(--card-bg);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .table-responsive { overflow-x: auto; padding: 0.5rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    thead {
+      background: var(--bg);
+      border-bottom: 2px solid var(--border);
+    }
+    th {
+      text-align: left;
+      padding: 0.9rem 1rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+    td {
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    .lesson-title { font-weight: 600; }
+    .lesson-course { color: var(--text-secondary); font-size: 0.85rem; }
+    .badge-status {
+      padding: 0.2rem 0.8rem;
+      border-radius: 30px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: #e8f0fe;
+      color: #1a67c4;
+    }
+    .badge-status.unpublished { background: #fef3e2; color: #b9770e; }
+    .action-btns { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .action-btns button {
+      padding: 0.3rem 0.8rem;
+      border-radius: 30px;
+      border: none;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+    .action-btns .edit { background: #e8f0fe; color: #1a67c4; }
+    .action-btns .edit:hover { background: #d0e0fc; }
+    .action-btns .publish { background: #e3f5e9; color: #1f7840; }
+    .action-btns .publish:hover { background: #c8ecd4; }
+    .action-btns .unpublish { background: #fef3e2; color: #b9770e; }
+    .action-btns .unpublish:hover { background: #fce4b8; }
+    .action-btns .delete { background: #fde8e8; color: #b3403a; }
+    .action-btns .delete:hover { background: #f5c8c8; }
+
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); }
+    .empty-state i { font-size: 3rem; margin-bottom: 0.8rem; opacity: 0.5; }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1.5rem;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--card-bg);
+      border-radius: 28px;
+      max-width: 520px;
+      width: 100%;
+      padding: 2rem;
+      box-shadow: 0 30px 60px -20px rgba(0,0,0,0.3);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal h2 { margin-bottom: 1.2rem; font-weight: 700; }
+    .modal .form-group { margin-bottom: 1.2rem; }
+    .modal .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.3rem;
+    }
+    .modal .form-group input, 
+    .modal .form-group textarea, 
+    .modal .form-group select {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      font-size: 0.95rem;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .modal .form-group input:focus, 
+    .modal .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(42,125,225,0.1);
+    }
+    .form-actions {
+      display: flex;
+      gap: 0.8rem;
+      margin-top: 1.5rem;
+      justify-content: flex-end;
+    }
+    .form-actions button {
+      padding: 0.6rem 1.8rem;
+      border-radius: 40px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .form-actions .cancel { background: var(--bg); color: var(--text); }
+    .form-actions .submit { background: var(--primary); color: white; }
+    .form-actions .submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .action-bar {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    .rtl { direction: rtl; }
+    .rtl .sidebar nav a { flex-direction: row-reverse; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { padding: 1.2rem; }
+      .action-btns { flex-direction: column; }
+    }
+    @media (max-width: 480px) {
+      .toolbar { flex-direction: column; align-items: stretch; }
+      .toolbar .search-box { width: 100%; }
+      .action-bar { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <i class="fas fa-graduation-cap"></i>
+      <span>Edu<small>Core</small></span>
+    </div>
+    <nav>
+      <a href="dashboard.html"><i class="fas fa-chart-pie"></i> <span data-key="dashboard">Dashboard</span></a>
+      <a href="courses.html"><i class="fas fa-book-open"></i> <span data-key="courses">Courses</span></a>
+      <a href="lessons.html" class="active"><i class="fas fa-file-alt"></i> <span data-key="lessons">Lessons</span></a>
+      <a href="students.html"><i class="fas fa-users"></i> <span data-key="students">Students</span></a>
+      <a href="live-classes.html"><i class="fas fa-video"></i> <span data-key="live">Live Classes</span></a>
+      <a href="revenue.html"><i class="fas fa-dollar-sign"></i> <span data-key="revenue">Revenue</span></a>
+      <a href="settings.html"><i class="fas fa-cog"></i> <span data-key="settings">Settings</span></a>
+    </nav>
+    <div class="sidebar-footer" id="logoutBtn">
+      <i class="fas fa-sign-out-alt"></i> <span data-key="logout">Logout</span>
+    </div>
+  </aside>
+
+  <div class="main" id="mainContent">
+    <header class="navbar">
+      <h1 id="pageTitle">📝 Lessons</h1>
+      <div class="navbar-actions">
+        <div class="lang-dark">
+          <button id="langToggle"><i class="fas fa-globe"></i> <span id="langLabel">EN</span></button>
+          <button class="dark-toggle" id="darkToggle"><i class="fas fa-moon"></i></button>
+        </div>
+        <button><i class="fas fa-user-circle" style="font-size:1.6rem;"></i></button>
+      </div>
+    </header>
+
+    <div class="action-bar">
+      <a href="#" id="backToCourseBtn" class="btn-secondary"><i class="fas fa-arrow-left"></i> Back to Course</a>
+      <a href="lesson-upload.html" id="uploadLessonBtn" class="btn-primary"><i class="fas fa-upload"></i> Upload New Lesson</a>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search lessons...">
+        <button id="searchBtn"><i class="fas fa-search"></i></button>
+      </div>
+      <div class="filter-group">
+        <select id="statusFilter">
+          <option value="all">All Status</option>
+          <option value="published">Published</option>
+          <option value="unpublished">Unpublished</option>
+        </select>
+        <select id="courseFilter">
+          <option value="all">All Courses</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th data-key="thTitle">Title</th>
+              <th data-key="thCourse">Course</th>
+              <th data-key="thStatus">Status</th>
+              <th data-key="thActions" style="min-width: 180px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="lessonsBody">
+            <tr><td colspan="4"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><br>Loading lessons...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="lessonModal">
+    <div class="modal">
+      <h2 id="modalTitle">Edit Lesson</h2>
+      <form id="lessonForm">
+        <input type="hidden" id="lessonId">
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="formTitle" required placeholder="Lesson title">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="formDesc" rows="2" placeholder="Brief description"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Course</label>
+          <select id="formCourse"></select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="formStatus">
+            <option value="published">Published</option>
+            <option value="unpublished">Unpublished</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="cancel" id="modalCancel">Cancel</button>
+          <button type="submit" class="submit" id="modalSubmit">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth, db } from './firebase.js';
+    import { showToast, showLoading, hideLoading } from './shared.js';
+    import { initOneSignal } from './onesignal.js';
+    import {
+      onAuthStateChanged,
+      signOut
+    } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js';
+    import {
+      collection,
+      getDocs,
+      updateDoc,
+      deleteDoc,
+      doc,
+      query,
+      where,
+      orderBy,
+      Timestamp,
+      addDoc
+    } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
+
+    // Auth protection
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        console.log('✅ Logged in as:', user.email);
+        document.body.classList.add('auth-ready');
+        loadCourses();
+        loadLessons();
+      }
+    });
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const courseId = urlParams.get('courseId');
+
+    const tbody = document.getElementById('lessonsBody');
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const courseFilter = document.getElementById('courseFilter');
+    const modal = document.getElementById('lessonModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const form = document.getElementById('lessonForm');
+    const lessonId = document.getElementById('lessonId');
+    const formTitle = document.getElementById('formTitle');
+    const formDesc = document.getElementById('formDesc');
+    const formCourse = document.getElementById('formCourse');
+    const formStatus = document.getElementById('formStatus');
+    const modalSubmit = document.getElementById('modalSubmit');
+    const modalCancel = document.getElementById('modalCancel');
+    const backToCourseBtn = document.getElementById('backToCourseBtn');
+    const uploadLessonBtn = document.getElementById('uploadLessonBtn');
+
+    let allLessons = [];
+    let allCourses = [];
+    let editingId = null;
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      if (confirm('Are you sure you want to logout?')) {
+        try {
+          await signOut(auth);
+          window.location.href = 'login.html';
+        } catch (error) {
+          showToast('Logout failed.', 'error');
+        }
+      }
+    });
+
+    async function loadCourses() {
+      try {
+        const snap = await getDocs(collection(db, 'courses'));
+        allCourses = [];
+        snap.forEach(doc => {
+          allCourses.push({ id: doc.id, ...doc.data() });
+        });
+
+        courseFilter.innerHTML = '<option value="all">All Courses</option>';
+        formCourse.innerHTML = '';
+        allCourses.forEach(c => {
+          courseFilter.innerHTML += `<option value="${c.id}">${c.title || 'Untitled'}</option>`;
+          formCourse.innerHTML += `<option value="${c.id}">${c.title || 'Untitled'}</option>`;
+        });
+
+        if (courseId) {
+          courseFilter.value = courseId;
+          backToCourseBtn.href = `course-details.html?id=${courseId}`;
+          uploadLessonBtn.href = `lesson-upload.html?courseId=${courseId}`;
+        } else {
+          backToCourseBtn.href = 'courses.html';
+          uploadLessonBtn.href = 'lesson-upload.html';
+        }
+      } catch (e) {
+        showToast('Failed to load courses.', 'error');
+      }
+    }
+
+    async function loadLessons() {
+      showLoading();
+      try {
+        const q = query(collection(db, 'lessons'), orderBy('createdAt', 'desc'));
+        const snap = await getDocs(q);
+        allLessons = [];
+        snap.forEach(doc => {
+          allLessons.push({ id: doc.id, ...doc.data() });
+        });
+        renderLessons();
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="fas fa-exclamation-triangle"></i><br>Error loading lessons</div></td></tr>`;
+        showToast('Failed to load lessons.', 'error');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    function renderLessons() {
+      const search = searchInput.value.toLowerCase().trim();
+      const status = statusFilter.value;
+      const course = courseFilter.value;
+
+      let filtered = allLessons.filter(l => {
+        const matchSearch = l.title?.toLowerCase().includes(search) || l.description?.toLowerCase().includes(search);
+        const matchStatus = status === 'all' || l.status === status;
+        const matchCourse = course === 'all' || l.courseId === course;
+        return matchSearch && matchStatus && matchCourse;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="fas fa-file-alt"></i><br>No lessons found</div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(l => {
+        const courseName = allCourses.find(c => c.id === l.courseId)?.title || 'Unknown Course';
+        const statusClass = l.status === 'unpublished' ? 'unpublished' : '';
+        const statusLabel = l.status || 'published';
+        const isPublished = l.status === 'published';
+        
+        return `
+          <tr>
+            <td><div class="lesson-title">${l.title || 'Untitled'}</div></td>
+            <td><div class="lesson-course">${courseName}</div></td>
+            <td><span class="badge-status ${statusClass}">${statusLabel}</span></td>
+            <td>
+              <div class="action-btns">
+                <button class="edit" data-id="${l.id}"><i class="fas fa-edit"></i> Edit</button>
+                <button class="${isPublished ? 'unpublish' : 'publish'}" data-id="${l.id}">
+                  ${isPublished ? 'Unpublish' : 'Publish'}
+                </button>
+                <button class="delete" data-id="${l.id}"><i class="fas fa-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      tbody.querySelectorAll('.edit').forEach(btn => btn.addEventListener('click', () => openEdit(btn.dataset.id)));
+      tbody.querySelectorAll('.publish, .unpublish').forEach(btn => btn.addEventListener('click', () => togglePublish(btn.dataset.id)));
+      tbody.querySelectorAll('.delete').forEach(btn => btn.addEventListener('click', () => deleteLesson(btn.dataset.id)));
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = formTitle.value.trim();
+      const description = formDesc.value.trim();
+      const selectedCourseId = formCourse.value;
+      const status = formStatus.value;
+
+      if (!title) { showToast('Title is required', 'error'); return; }
+      if (!selectedCourseId) { showToast('Please select a course', 'error'); return; }
+
+      modalSubmit.disabled = true;
+      modalSubmit.textContent = 'Saving...';
+
+      try {
+        const data = {
+          title,
+          description,
+          courseId: selectedCourseId,
+          status,
+          updatedAt: Timestamp.now()
+        };
+
+        if (editingId) {
+          await updateDoc(doc(db, 'lessons', editingId), data);
+          showToast('Lesson updated successfully', 'success');
+        } else {
+          data.createdAt = Timestamp.now();
+          await addDoc(collection(db, 'lessons'), data);
+          showToast('Lesson created successfully', 'success');
+        }
+        closeModal();
+        loadLessons();
+      } catch (err) {
+        showToast('Error saving lesson: ' + err.message, 'error');
+      } finally {
+        modalSubmit.disabled = false;
+        modalSubmit.textContent = 'Save';
+      }
+    });
+
+    async function deleteLesson(id) {
+      if (!confirm('Delete this lesson permanently?')) return;
+      try {
+        await deleteDoc(doc(db, 'lessons', id));
+        showToast('Lesson deleted', 'success');
+        loadLessons();
+      } catch (e) {
+        showToast('Error deleting lesson', 'error');
+      }
+    }
+
+    async function togglePublish(id) {
+      const lesson = allLessons.find(l => l.id === id);
+      const newStatus = lesson.status === 'published' ? 'unpublished' : 'published';
+      try {
+        await updateDoc(doc(db, 'lessons', id), { status: newStatus });
+        showToast(`Lesson ${newStatus === 'published' ? 'published' : 'unpublished'}`, 'success');
+        loadLessons();
+      } catch (e) {
+        showToast('Error updating status', 'error');
+      }
+    }
+
+    function openEdit(id) {
+      const lesson = allLessons.find(l => l.id === id);
+      if (!lesson) return;
+      editingId = id;
+      modalTitle.textContent = 'Edit Lesson';
+      lessonId.value = id;
+      formTitle.value = lesson.title || '';
+      formDesc.value = lesson.description || '';
+      formCourse.value = lesson.courseId || '';
+      formStatus.value = lesson.status || 'published';
+      modal.classList.add('active');
+    }
+
+    function closeModal() {
+      modal.classList.remove('active');
+      form.reset();
+    }
+
+    modalCancel.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    searchInput.addEventListener('input', renderLessons);
+    statusFilter.addEventListener('change', renderLessons);
+    courseFilter.addEventListener('change', renderLessons);
+
+    // Language & Dark Mode
+    let lang = 'en';
+    const langToggle = document.getElementById('langToggle');
+    const darkToggle = document.getElementById('darkToggle');
+    const langLabel = document.getElementById('langLabel');
+    const main = document.getElementById('mainContent');
+
+    const translationMap = {
+      en: {
+        dashboard: 'Dashboard',
+        courses: 'Courses',
+        lessons: 'Lessons',
+        students: 'Students',
+        live: 'Live Classes',
+        revenue: 'Revenue',
+        settings: 'Settings',
+        logout: 'Logout',
+        pageTitle: '📝 Lessons',
+        searchPlaceholder: 'Search lessons...',
+        allStatus: 'All Status',
+        published: 'Published',
+        unpublished: 'Unpublished',
+        allCourses: 'All Courses',
+        thTitle: 'Title',
+        thCourse: 'Course',
+        thStatus: 'Status',
+        thActions: 'Actions',
+        backToCourse: '<i class="fas fa-arrow-left"></i> Back to Course',
+        uploadLesson: '<i class="fas fa-upload"></i> Upload New Lesson'
+      },
+      ar: {
+        dashboard: 'لوحة التحكم',
+        courses: 'الدورات',
+        lessons: 'الدروس',
+        students: 'الطلاب',
+        live: 'الحصص المباشرة',
+        revenue: 'الإيرادات',
+        settings: 'الإعدادات',
+        logout: 'تسجيل الخروج',
+        pageTitle: '📝 الدروس',
+        searchPlaceholder: 'بحث عن دروس...',
+        allStatus: 'جميع الحالات',
+        published: 'منشور',
+        unpublished: 'غير منشور',
+        allCourses: 'جميع الدورات',
+        thTitle: 'العنوان',
+        thCourse: 'الدورة',
+        thStatus: 'الحالة',
+        thActions: 'إجراءات',
+        backToCourse: '<i class="fas fa-arrow-left"></i> العودة للدورة',
+        uploadLesson: '<i class="fas fa-upload"></i> رفع درس جديد'
+      }
+    };
+
+    function applyLanguage(langCode) {
+      const map = translationMap[langCode];
+      document.querySelectorAll('[data-key]').forEach(el => {
+        const key = el.getAttribute('data-key');
+        if (map[key]) el.textContent = map[key];
+      });
+      document.getElementById('pageTitle').textContent = map.pageTitle;
+      document.getElementById('searchInput').placeholder = map.searchPlaceholder;
+      document.querySelector('#statusFilter option[value="all"]').textContent = map.allStatus;
+      document.querySelector('#statusFilter option[value="published"]').textContent = map.published;
+      document.querySelector('#statusFilter option[value="unpublished"]').textContent = map.unpublished;
+      // Course filter "all" option
+      document.querySelector('#courseFilter option[value="all"]').textContent = map.allCourses;
+      document.getElementById('backToCourseBtn').innerHTML = map.backToCourse;
+      document.getElementById('uploadLessonBtn').innerHTML = map.uploadLesson;
+      main.classList.toggle('rtl', langCode === 'ar');
+    }
+
+    langToggle.addEventListener('click', () => {
+      lang = lang === 'en' ? 'ar' : 'en';
+      langLabel.textContent = lang.toUpperCase();
+      applyLanguage(lang);
+    });
+
+    darkToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      darkToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+    });
+
+    // Init OneSignal
+    initOneSignal();
+
+    console.log('✅ Lessons Management ready (production mode)');
+  </script>
+</body>
+</html>

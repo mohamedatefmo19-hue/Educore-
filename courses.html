@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
+  <title>EduCore · Courses Management</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
+  <!-- Cloudinary Upload Widget -->
+  <script src="https://widget.cloudinary.com/v2.0/global/all.js" type="text/javascript"></script>
+  
+  <!-- Shared styles -->
+  <link rel="stylesheet" href="shared.css">
+  
+  <style>
+    body {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: var(--card-bg);
+      border-right: 1px solid var(--border);
+      padding: 2rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      transition: background 0.2s, border 0.2s;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin-bottom: 2.5rem;
+    }
+    .sidebar-logo i {
+      font-size: 1.8rem;
+      color: var(--primary);
+      background: rgba(42,125,225,0.1);
+      padding: 0.6rem;
+      border-radius: 14px;
+    }
+    .sidebar-logo span {
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+    .sidebar-logo span small { color: var(--primary); }
+    .sidebar nav { flex: 1; }
+    .sidebar nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.8rem 1rem;
+      border-radius: 12px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: 0.15s;
+      margin-bottom: 0.3rem;
+    }
+    .sidebar nav a i { width: 1.4rem; }
+    .sidebar nav a:hover,
+    .sidebar nav a.active {
+      background: rgba(42,125,225,0.1);
+      color: var(--primary);
+    }
+    .sidebar-footer {
+      border-top: 1px solid var(--border);
+      padding-top: 1.2rem;
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      transition: 0.15s;
+    }
+    .sidebar-footer:hover { color: #e74c3c; }
+
+    /* Main content */
+    .main {
+      flex: 1;
+      padding: 1.8rem 2rem 2.5rem;
+      overflow-x: hidden;
+    }
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .navbar h1 { font-size: 1.7rem; font-weight: 700; }
+    .navbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+    }
+    .navbar-actions button {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .navbar-actions button:hover { color: var(--primary); }
+    .lang-dark { display: flex; gap: 0.6rem; }
+    .lang-dark button {
+      background: none;
+      border: none;
+      font-weight: 600;
+      color: var(--primary);
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .lang-dark .dark-toggle { color: var(--text-secondary); }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.8rem;
+      align-items: center;
+    }
+    .toolbar .search-box {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1.5px solid var(--border);
+      border-radius: 40px;
+      padding: 0.4rem 0.4rem 0.4rem 1.2rem;
+      transition: 0.15s;
+    }
+    .toolbar .search-box:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(42,125,225,0.1);
+    }
+    .toolbar .search-box input {
+      border: none;
+      background: transparent;
+      padding: 0.6rem 0;
+      flex: 1;
+      font-size: 0.95rem;
+      outline: none;
+      color: var(--text);
+    }
+    .toolbar .search-box button {
+      background: var(--primary);
+      border: none;
+      color: white;
+      padding: 0.5rem 1.2rem;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .toolbar .search-box button:hover { background: var(--primary-hover); }
+    .filter-group {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+    .filter-group select {
+      padding: 0.6rem 1.2rem;
+      border-radius: 40px;
+      border: 1.5px solid var(--border);
+      background: var(--card-bg);
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.4rem;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: scale(1.01);
+    }
+
+    .courses-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+    .course-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      transition: 0.15s;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+    }
+    .course-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.1);
+    }
+    .course-card .thumbnail {
+      width: 100%;
+      height: 150px;
+      background: var(--border);
+      object-fit: cover;
+      display: block;
+    }
+    .course-card .body {
+      padding: 1rem 1.2rem 1.2rem;
+    }
+    .course-card .title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 0.3rem;
+    }
+    .course-card .desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 0.6rem;
+    }
+    .course-card .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.8rem;
+    }
+    .course-card .meta .price { font-weight: 700; color: var(--primary); }
+    .course-card .actions {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .course-card .actions button {
+      padding: 0.3rem 0.8rem;
+      border-radius: 30px;
+      border: none;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+    .course-card .actions .edit { background: #e8f0fe; color: #1a67c4; }
+    .course-card .actions .archive { background: #fef3e2; color: #b9770e; }
+    .course-card .actions .delete { background: #fde8e8; color: #b3403a; }
+    .course-card .actions .edit:hover { background: #d0e0fc; }
+    .course-card .actions .archive:hover { background: #fce4b8; }
+    .course-card .actions .delete:hover { background: #f5c8c8; }
+    .badge-status {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.7rem;
+      border-radius: 30px;
+      background: #e8f0fe;
+      color: #1a67c4;
+    }
+    .badge-status.archived { background: #fef3e2; color: #b9770e; }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-secondary);
+    }
+    .empty-state i { font-size: 3rem; margin-bottom: 0.8rem; opacity: 0.5; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1.5rem;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--card-bg);
+      border-radius: 28px;
+      max-width: 520px;
+      width: 100%;
+      padding: 2rem;
+      box-shadow: 0 30px 60px -20px rgba(0,0,0,0.3);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal h2 { margin-bottom: 1.2rem; font-weight: 700; }
+    .modal .form-group { margin-bottom: 1.2rem; }
+    .modal .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.3rem;
+    }
+    .modal .form-group input, 
+    .modal .form-group textarea, 
+    .modal .form-group select {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      font-size: 0.95rem;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .modal .form-group input:focus, 
+    .modal .form-group textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(42,125,225,0.1);
+    }
+    .thumbnail-preview {
+      width: 100%;
+      height: 120px;
+      border-radius: 14px;
+      background: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+      object-fit: cover;
+      color: var(--text-secondary);
+    }
+    .form-actions {
+      display: flex;
+      gap: 0.8rem;
+      margin-top: 1.5rem;
+      justify-content: flex-end;
+    }
+    .form-actions button {
+      padding: 0.6rem 1.8rem;
+      border-radius: 40px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .form-actions .cancel { background: var(--bg); color: var(--text); }
+    .form-actions .submit { background: var(--primary); color: white; }
+    .form-actions .submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .rtl { direction: rtl; }
+    .rtl .sidebar nav a { flex-direction: row-reverse; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { padding: 1.2rem; }
+    }
+    @media (max-width: 480px) {
+      .toolbar { flex-direction: column; align-items: stretch; }
+      .toolbar .search-box { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <i class="fas fa-graduation-cap"></i>
+      <span>Edu<small>Core</small></span>
+    </div>
+    <nav>
+      <a href="dashboard.html"><i class="fas fa-chart-pie"></i> <span data-key="dashboard">Dashboard</span></a>
+      <a href="courses.html" class="active"><i class="fas fa-book-open"></i> <span data-key="courses">Courses</span></a>
+      <a href="students.html"><i class="fas fa-users"></i> <span data-key="students">Students</span></a>
+      <a href="live-classes.html"><i class="fas fa-video"></i> <span data-key="live">Live Classes</span></a>
+      <a href="revenue.html"><i class="fas fa-dollar-sign"></i> <span data-key="revenue">Revenue</span></a>
+      <a href="settings.html"><i class="fas fa-cog"></i> <span data-key="settings">Settings</span></a>
+    </nav>
+    <div class="sidebar-footer" id="logoutBtn">
+      <i class="fas fa-sign-out-alt"></i> <span data-key="logout">Logout</span>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main" id="mainContent">
+    <header class="navbar">
+      <h1 id="pageTitle">📚 Courses</h1>
+      <div class="navbar-actions">
+        <div class="lang-dark">
+          <button id="langToggle"><i class="fas fa-globe"></i> <span id="langLabel">EN</span></button>
+          <button class="dark-toggle" id="darkToggle"><i class="fas fa-moon"></i></button>
+        </div>
+        <button><i class="fas fa-user-circle" style="font-size:1.6rem;"></i></button>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search courses...">
+        <button id="searchBtn"><i class="fas fa-search"></i></button>
+      </div>
+      <div class="filter-group">
+        <select id="statusFilter">
+          <option value="all">All Status</option>
+          <option value="active">Active</option>
+          <option value="archived">Archived</option>
+        </select>
+        <button class="btn-primary" id="addCourseBtn"><i class="fas fa-plus"></i> Add Course</button>
+      </div>
+    </div>
+
+    <div id="coursesContainer" class="courses-grid">
+      <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><br>Loading courses...</div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="courseModal">
+    <div class="modal">
+      <h2 id="modalTitle">Add Course</h2>
+      <form id="courseForm">
+        <input type="hidden" id="courseId">
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="formTitle" required placeholder="Course title">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="formDesc" rows="2" placeholder="Brief description"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Price ($)</label>
+          <input type="number" id="formPrice" placeholder="49.99" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="formStatus">
+            <option value="active">Active</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Thumbnail</label>
+          <img id="thumbnailPreview" class="thumbnail-preview" src="" alt="Preview" style="display:none;">
+          <button type="button" class="btn-primary" id="uploadThumbBtn" style="width:100%">
+            <i class="fas fa-cloud-upload-alt"></i> Upload from Cloudinary
+          </button>
+          <small style="color:var(--text-secondary);">Upload a course image</small>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="cancel" id="modalCancel">Cancel</button>
+          <button type="submit" class="submit" id="modalSubmit">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth, db } from './firebase.js';
+    import { showToast, showLoading, hideLoading } from './shared.js';
+    import { openUploadWidget } from './cloudinary.js';
+    import { initOneSignal } from './onesignal.js';
+    
+    import {
+      onAuthStateChanged,
+      signOut
+    } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js';
+    import {
+      collection,
+      getDocs,
+      addDoc,
+      updateDoc,
+      deleteDoc,
+      doc,
+      query,
+      orderBy,
+      Timestamp
+    } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
+
+    // Auth protection
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        console.log('✅ Logged in as:', user.email);
+        document.body.classList.add('auth-ready');
+        loadCourses();
+      }
+    });
+
+    const container = document.getElementById('coursesContainer');
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const addBtn = document.getElementById('addCourseBtn');
+    const modal = document.getElementById('courseModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const form = document.getElementById('courseForm');
+    const courseId = document.getElementById('courseId');
+    const formTitle = document.getElementById('formTitle');
+    const formDesc = document.getElementById('formDesc');
+    const formPrice = document.getElementById('formPrice');
+    const formStatus = document.getElementById('formStatus');
+    const uploadBtn = document.getElementById('uploadThumbBtn');
+    const thumbnailPreview = document.getElementById('thumbnailPreview');
+    const modalSubmit = document.getElementById('modalSubmit');
+    const modalCancel = document.getElementById('modalCancel');
+
+    let allCourses = [];
+    let editingId = null;
+    let selectedThumbnailUrl = null; // from Cloudinary
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      if (confirm('Are you sure you want to logout?')) {
+        try {
+          await signOut(auth);
+          window.location.href = 'login.html';
+        } catch (error) {
+          showToast('Logout failed.', 'error');
+        }
+      }
+    });
+
+    async function loadCourses() {
+      showLoading();
+      try {
+        const q = query(collection(db, 'courses'), orderBy('createdAt', 'desc'));
+        const snap = await getDocs(q);
+        allCourses = [];
+        snap.forEach(doc => {
+          allCourses.push({ id: doc.id, ...doc.data() });
+        });
+        renderCourses();
+      } catch (e) {
+        console.error(e);
+        showToast('Failed to load courses.', 'error');
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><br>Error loading courses</div>`;
+      } finally {
+        hideLoading();
+      }
+    }
+
+    function renderCourses() {
+      const search = searchInput.value.toLowerCase().trim();
+      const status = statusFilter.value;
+      let filtered = allCourses.filter(c => {
+        const matchSearch = c.title?.toLowerCase().includes(search) || c.description?.toLowerCase().includes(search);
+        const matchStatus = status === 'all' || c.status === status;
+        return matchSearch && matchStatus;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-book-open"></i><br>No courses found</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(c => `
+        <div class="course-card" data-id="${c.id}">
+          ${c.thumbnail ? `<img class="thumbnail" src="${c.thumbnail}" alt="${c.title}" loading="lazy">` : `<div class="thumbnail" style="display:flex;align-items:center;justify-content:center;background:var(--border);color:var(--text-secondary);"><i class="fas fa-image" style="font-size:2.5rem;"></i></div>`}
+          <div class="body">
+            <div class="title">${c.title || 'Untitled'}</div>
+            <div class="desc">${c.description || ''}</div>
+            <div class="meta">
+              <span class="price">$${c.price || '0'}</span>
+              <span class="badge-status ${c.status === 'archived' ? 'archived' : ''}">${c.status || 'active'}</span>
+            </div>
+            <div class="actions">
+              <button class="edit" data-id="${c.id}"><i class="fas fa-edit"></i> Edit</button>
+              <button class="archive" data-id="${c.id}">${c.status === 'archived' ? 'Unarchive' : 'Archive'}</button>
+              <button class="delete" data-id="${c.id}"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Events
+      container.querySelectorAll('.course-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.actions')) return;
+          const id = card.dataset.id;
+          window.location.href = `course-details.html?id=${id}`;
+        });
+      });
+      container.querySelectorAll('.edit').forEach(btn => btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openEdit(btn.dataset.id);
+      }));
+      container.querySelectorAll('.archive').forEach(btn => btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleArchive(btn.dataset.id);
+      }));
+      container.querySelectorAll('.delete').forEach(btn => btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteCourse(btn.dataset.id);
+      }));
+    }
+
+    // Save course
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const title = formTitle.value.trim();
+      const description = formDesc.value.trim();
+      const price = parseFloat(formPrice.value) || 0;
+      const status = formStatus.value;
+
+      if (!title) {
+        showToast('Title is required', 'error');
+        return;
+      }
+
+      modalSubmit.disabled = true;
+      modalSubmit.textContent = 'Saving...';
+
+      try {
+        const data = {
+          title,
+          description,
+          price,
+          status,
+          updatedAt: Timestamp.now()
+        };
+        if (selectedThumbnailUrl) {
+          data.thumbnail = selectedThumbnailUrl;
+        }
+
+        if (editingId) {
+          await updateDoc(doc(db, 'courses', editingId), data);
+          showToast('Course updated successfully', 'success');
+        } else {
+          data.createdAt = Timestamp.now();
+          await addDoc(collection(db, 'courses'), data);
+          showToast('Course created successfully', 'success');
+        }
+        closeModal();
+        loadCourses();
+      } catch (err) {
+        showToast('Error saving course: ' + err.message, 'error');
+      } finally {
+        modalSubmit.disabled = false;
+        modalSubmit.textContent = 'Save';
+      }
+    });
+
+    // Delete
+    async function deleteCourse(id) {
+      if (!confirm('Delete this course permanently?')) return;
+      try {
+        await deleteDoc(doc(db, 'courses', id));
+        showToast('Course deleted', 'success');
+        loadCourses();
+      } catch (e) {
+        showToast('Error deleting course', 'error');
+      }
+    }
+
+    // Toggle archive
+    async function toggleArchive(id) {
+      const course = allCourses.find(c => c.id === id);
+      const newStatus = course.status === 'archived' ? 'active' : 'archived';
+      try {
+        await updateDoc(doc(db, 'courses', id), { status: newStatus });
+        showToast(`Course ${newStatus === 'archived' ? 'archived' : 'unarchived'}`, 'success');
+        loadCourses();
+      } catch (e) {
+        showToast('Error updating status', 'error');
+      }
+    }
+
+    // Open modal for edit
+    function openEdit(id) {
+      const course = allCourses.find(c => c.id === id);
+      if (!course) return;
+      editingId = id;
+      modalTitle.textContent = 'Edit Course';
+      courseId.value = id;
+      formTitle.value = course.title || '';
+      formDesc.value = course.description || '';
+      formPrice.value = course.price || '';
+      formStatus.value = course.status || 'active';
+      selectedThumbnailUrl = course.thumbnail || null;
+      updateThumbnailPreview(selectedThumbnailUrl);
+      modal.classList.add('active');
+    }
+
+    function openAddModal() {
+      editingId = null;
+      modalTitle.textContent = 'Add Course';
+      form.reset();
+      courseId.value = '';
+      formStatus.value = 'active';
+      selectedThumbnailUrl = null;
+      updateThumbnailPreview(null);
+      modal.classList.add('active');
+    }
+
+    function closeModal() {
+      modal.classList.remove('active');
+      selectedThumbnailUrl = null;
+      updateThumbnailPreview(null);
+    }
+
+    function updateThumbnailPreview(url) {
+      if (url) {
+        thumbnailPreview.src = url;
+        thumbnailPreview.style.display = 'block';
+      } else {
+        thumbnailPreview.src = '';
+        thumbnailPreview.style.display = 'none';
+      }
+    }
+
+    // Cloudinary upload
+    uploadBtn.addEventListener('click', () => {
+      openUploadWidget({
+        resourceType: 'image',
+        folder: 'course-images',
+        multiple: false,
+        onSuccess: (info) => {
+          selectedThumbnailUrl = info.secure_url;
+          updateThumbnailPreview(selectedThumbnailUrl);
+          showToast('Thumbnail uploaded!', 'success');
+        },
+        onError: (err) => {
+          showToast('Upload failed.', 'error');
+        }
+      });
+    });
+
+    addBtn.addEventListener('click', openAddModal);
+    modalCancel.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    searchInput.addEventListener('input', renderCourses);
+    statusFilter.addEventListener('change', renderCourses);
+
+    // Language & Dark Mode
+    let lang = 'en';
+    const langToggle = document.getElementById('langToggle');
+    const darkToggle = document.getElementById('darkToggle');
+    const langLabel = document.getElementById('langLabel');
+    const main = document.getElementById('mainContent');
+
+    const translationMap = {
+      en: {
+        dashboard: 'Dashboard',
+        courses: 'Courses',
+        students: 'Students',
+        live: 'Live Classes',
+        revenue: 'Revenue',
+        settings: 'Settings',
+        logout: 'Logout',
+        pageTitle: '📚 Courses',
+        searchPlaceholder: 'Search courses...',
+        allStatus: 'All Status',
+        active: 'Active',
+        archived: 'Archived',
+        addCourse: '<i class="fas fa-plus"></i> Add Course'
+      },
+      ar: {
+        dashboard: 'لوحة التحكم',
+        courses: 'الدورات',
+        students: 'الطلاب',
+        live: 'الحصص المباشرة',
+        revenue: 'الإيرادات',
+        settings: 'الإعدادات',
+        logout: 'تسجيل الخروج',
+        pageTitle: '📚 الدورات',
+        searchPlaceholder: 'بحث عن دورات...',
+        allStatus: 'جميع الحالات',
+        active: 'نشط',
+        archived: 'مؤرشف',
+        addCourse: '<i class="fas fa-plus"></i> إضافة دورة'
+      }
+    };
+
+    function applyLanguage(langCode) {
+      const map = translationMap[langCode];
+      document.querySelectorAll('[data-key]').forEach(el => {
+        const key = el.getAttribute('data-key');
+        if (map[key]) el.textContent = map[key];
+      });
+      document.getElementById('pageTitle').textContent = map.pageTitle;
+      document.getElementById('searchInput').placeholder = map.searchPlaceholder;
+      document.querySelector('#statusFilter option[value="all"]').textContent = map.allStatus;
+      document.querySelector('#statusFilter option[value="active"]').textContent = map.active;
+      document.querySelector('#statusFilter option[value="archived"]').textContent = map.archived;
+      document.getElementById('addCourseBtn').innerHTML = map.addCourse;
+      main.classList.toggle('rtl', langCode === 'ar');
+    }
+
+    langToggle.addEventListener('click', () => {
+      lang = lang === 'en' ? 'ar' : 'en';
+      langLabel.textContent = lang.toUpperCase();
+      applyLanguage(lang);
+    });
+
+    darkToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      darkToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+    });
+
+    // Init OneSignal
+    initOneSignal();
+
+    console.log('✅ Courses Management ready (production mode)');
+  </script>
+</body>
+</html>
