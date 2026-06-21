@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
+  <title>EduCore · Course Details</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    body {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: var(--card-bg);
+      border-right: 1px solid var(--border);
+      padding: 2rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      transition: background 0.2s, border 0.2s;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin-bottom: 2.5rem;
+    }
+    .sidebar-logo i {
+      font-size: 1.8rem;
+      color: var(--primary);
+      background: rgba(42,125,225,0.1);
+      padding: 0.6rem;
+      border-radius: 14px;
+    }
+    .sidebar-logo span {
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+    .sidebar-logo span small { color: var(--primary); }
+    .sidebar nav { flex: 1; }
+    .sidebar nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.8rem 1rem;
+      border-radius: 12px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: 0.15s;
+      margin-bottom: 0.3rem;
+    }
+    .sidebar nav a i { width: 1.4rem; }
+    .sidebar nav a:hover,
+    .sidebar nav a.active {
+      background: rgba(42,125,225,0.1);
+      color: var(--primary);
+    }
+    .sidebar-footer {
+      border-top: 1px solid var(--border);
+      padding-top: 1.2rem;
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      transition: 0.15s;
+    }
+    .sidebar-footer:hover { color: #e74c3c; }
+
+    .main {
+      flex: 1;
+      padding: 1.8rem 2rem 2.5rem;
+      overflow-x: hidden;
+    }
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .navbar h1 { font-size: 1.7rem; font-weight: 700; }
+    .navbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+    }
+    .navbar-actions button {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .navbar-actions button:hover { color: var(--primary); }
+    .lang-dark { display: flex; gap: 0.6rem; }
+    .lang-dark button {
+      background: none;
+      border: none;
+      font-weight: 600;
+      color: var(--primary);
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .lang-dark .dark-toggle { color: var(--text-secondary); }
+
+    .course-header {
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 1.8rem 2rem;
+      margin-bottom: 2rem;
+      border: 1px solid var(--border);
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .course-header .thumb {
+      width: 160px;
+      height: 120px;
+      border-radius: 16px;
+      background: var(--border);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .course-header .info { flex: 1; }
+    .course-header .info h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .course-header .info .desc { color: var(--text-secondary); margin-bottom: 0.8rem; }
+    .course-header .info .meta { display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.9rem; }
+    .course-header .info .meta span { display: flex; align-items: center; gap: 0.4rem; }
+    .course-header .info .meta i { color: var(--primary); width: 1.2rem; }
+    .badge-status {
+      padding: 0.25rem 1rem;
+      border-radius: 30px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #e8f0fe;
+      color: #1a67c4;
+    }
+    .badge-status.archived { background: #fef3e2; color: #b9770e; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1.2rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 1.2rem;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .stat-card .label { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
+    .stat-card .value { font-size: 2rem; font-weight: 700; margin: 0.3rem 0; }
+    .stat-card i { color: var(--primary); opacity: 0.6; font-size: 1.2rem; }
+
+    .card-panel {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+    }
+    .card-panel h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .card-panel h3 i { color: var(--primary); }
+    .student-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .student-item .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #e8f0fe;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .student-item .name { font-weight: 500; }
+    .student-item .email { font-size: 0.85rem; color: var(--text-secondary); margin-left: auto; }
+
+    .empty-state { text-align: center; padding: 2rem; color: var(--text-secondary); }
+    .empty-state i { font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.5; }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.6rem 1.4rem;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--text);
+      border: none;
+      padding: 0.6rem 1.4rem;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+    }
+    .btn-secondary:hover { background: var(--border); }
+
+    .action-bar { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+
+    .rtl { direction: rtl; }
+    .rtl .sidebar nav a { flex-direction: row-reverse; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { padding: 1.2rem; }
+      .course-header { flex-direction: column; align-items: flex-start; }
+      .course-header .thumb { width: 100%; height: 160px; }
+    }
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .action-bar { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <i class="fas fa-graduation-cap"></i>
+      <span>Edu<small>Core</small></span>
+    </div>
+    <nav>
+      <a href="dashboard.html"><i class="fas fa-chart-pie"></i> <span data-key="dashboard">Dashboard</span></a>
+      <a href="courses.html" class="active"><i class="fas fa-book-open"></i> <span data-key="courses">Courses</span></a>
+      <a href="students.html"><i class="fas fa-users"></i> <span data-key="students">Students</span></a>
+      <a href="live-classes.html"><i class="fas fa-video"></i> <span data-key="live">Live Classes</span></a>
+      <a href="revenue.html"><i class="fas fa-dollar-sign"></i> <span data-key="revenue">Revenue</span></a>
+      <a href="settings.html"><i class="fas fa-cog"></i> <span data-key="settings">Settings</span></a>
+    </nav>
+    <div class="sidebar-footer" id="logoutBtn">
+      <i class="fas fa-sign-out-alt"></i> <span data-key="logout">Logout</span>
+    </div>
+  </aside>
+
+  <div class="main" id="mainContent">
+    <header class="navbar">
+      <h1 id="pageTitle">📘 Course Details</h1>
+      <div class="navbar-actions">
+        <div class="lang-dark">
+          <button id="langToggle"><i class="fas fa-globe"></i> <span id="langLabel">EN</span></button>
+          <button class="dark-toggle" id="darkToggle"><i class="fas fa-moon"></i></button>
+        </div>
+        <button><i class="fas fa-user-circle" style="font-size:1.6rem;"></i></button>
+      </div>
+    </header>
+
+    <div id="courseHeader" class="course-header">
+      <div class="empty-state" style="width:100%;"><i class="fas fa-spinner fa-spin"></i><br>Loading course...</div>
+    </div>
+
+    <div class="action-bar">
+      <a href="#" id="viewLessonsBtn" class="btn-primary"><i class="fas fa-file-alt"></i> View Lessons</a>
+      <a href="#" id="uploadLessonBtn" class="btn-secondary"><i class="fas fa-upload"></i> Upload Lesson</a>
+      <a href="courses.html" class="btn-secondary"><i class="fas fa-arrow-left"></i> Back to Courses</a>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card"><div class="label" data-key="statStudents">Students</div><div class="value" id="statStudents">—</div><i class="fas fa-user-graduate"></i></div>
+      <div class="stat-card"><div class="label" data-key="statLessons">Lessons</div><div class="value" id="statLessons">—</div><i class="fas fa-file-alt"></i></div>
+      <div class="stat-card"><div class="label" data-key="statRevenue">Revenue</div><div class="value" id="statRevenue">—</div><i class="fas fa-dollar-sign"></i></div>
+      <div class="stat-card"><div class="label" data-key="statCompletion">Completion</div><div class="value" id="statCompletion">—</div><i class="fas fa-chart-line"></i></div>
+    </div>
+
+    <div class="card-panel">
+      <h3><i class="fas fa-users"></i> <span data-key="enrolledStudents">Enrolled Students</span></h3>
+      <div id="studentsList"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><br>Loading students...</div></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth, db } from './firebase.js';
+    import { showToast, showLoading, hideLoading } from './shared.js';
+    import { initOneSignal } from './onesignal.js';
+    import {
+      onAuthStateChanged,
+      signOut
+    } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js';
+    import {
+      doc,
+      getDoc,
+      collection,
+      query,
+      where,
+      getDocs
+    } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
+
+    // Auth protection
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        console.log('✅ Logged in as:', user.email);
+        document.body.classList.add('auth-ready');
+        initPage();
+      }
+    });
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const courseId = urlParams.get('id');
+
+    const header = document.getElementById('courseHeader');
+    const statStudentsEl = document.getElementById('statStudents');
+    const statLessonsEl = document.getElementById('statLessons');
+    const statRevenueEl = document.getElementById('statRevenue');
+    const statCompletionEl = document.getElementById('statCompletion');
+    const studentsList = document.getElementById('studentsList');
+    const pageTitle = document.getElementById('pageTitle');
+    const viewLessonsBtn = document.getElementById('viewLessonsBtn');
+    const uploadLessonBtn = document.getElementById('uploadLessonBtn');
+
+    function initPage() {
+      if (courseId) {
+        loadCourseDetails(courseId);
+      } else {
+        header.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><br>No course ID provided</div>`;
+      }
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      if (confirm('Are you sure you want to logout?')) {
+        try {
+          await signOut(auth);
+          window.location.href = 'login.html';
+        } catch (error) {
+          showToast('Logout failed.', 'error');
+        }
+      }
+    });
+
+    async function loadCourseDetails(id) {
+      showLoading();
+      try {
+        const docRef = doc(db, 'courses', id);
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+          header.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><br>Course not found</div>`;
+          return;
+        }
+        const course = { id: docSnap.id, ...docSnap.data() };
+        pageTitle.textContent = `📘 ${course.title || 'Course Details'}`;
+
+        // Fix navigation links
+        viewLessonsBtn.href = `lessons.html?courseId=${id}`;
+        uploadLessonBtn.href = `lesson-upload.html?courseId=${id}`;
+
+        renderHeader(course);
+
+        // Fetch stats
+        const [enrollSnap, lessonsSnap] = await Promise.all([
+          getDocs(query(collection(db, 'enrollments'), where('courseId', '==', id))),
+          getDocs(query(collection(db, 'lessons'), where('courseId', '==', id)))
+        ]);
+
+        const studentIds = enrollSnap.docs.map(d => d.data().studentId);
+        const studentCount = studentIds.length;
+        const lessonCount = lessonsSnap.size;
+
+        let totalRevenue = 0;
+        enrollSnap.forEach(doc => {
+          const data = doc.data();
+          if (data.price) totalRevenue += Number(data.price);
+        });
+
+        // Completion rate
+        let completionRate = 0;
+        const progressQuery = query(collection(db, 'progress'), where('courseId', '==', id));
+        const progressSnap = await getDocs(progressQuery);
+        if (progressSnap.size > 0) {
+          let totalProgress = 0;
+          progressSnap.forEach(doc => {
+            const data = doc.data();
+            totalProgress += data.progress || 0;
+          });
+          completionRate = Math.round(totalProgress / progressSnap.size);
+        }
+
+        statStudentsEl.textContent = studentCount;
+        statLessonsEl.textContent = lessonCount;
+        statRevenueEl.textContent = '$' + totalRevenue.toFixed(0);
+        statCompletionEl.textContent = completionRate + '%';
+
+        // Load student details
+        if (studentIds.length === 0) {
+          studentsList.innerHTML = `<div class="empty-state"><i class="fas fa-user-graduate"></i><br>No students enrolled yet</div>`;
+        } else {
+          let studentsHtml = '';
+          for (const sid of studentIds) {
+            try {
+              const userRef = doc(db, 'students', sid);
+              const userSnap = await getDoc(userRef);
+              if (userSnap.exists()) {
+                const user = userSnap.data();
+                const name = user.displayName || user.name || 'Student';
+                const email = user.email || '';
+                const initial = name.charAt(0).toUpperCase();
+                studentsHtml += `
+                  <div class="student-item">
+                    <div class="avatar">${initial}</div>
+                    <div class="name">${name}</div>
+                    <div class="email">${email}</div>
+                  </div>
+                `;
+              }
+            } catch (e) { /* skip */ }
+          }
+          studentsList.innerHTML = studentsHtml || `<div class="empty-state">No student details available</div>`;
+        }
+
+      } catch (error) {
+        console.error('Error loading course details:', error);
+        showToast('Failed to load course details.', 'error');
+        header.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><br>Error loading course</div>`;
+      } finally {
+        hideLoading();
+      }
+    }
+
+    function renderHeader(course) {
+      const statusClass = course.status === 'archived' ? 'archived' : '';
+      const statusLabel = course.status || 'active';
+      header.innerHTML = `
+        ${course.thumbnail ? `<img class="thumb" src="${course.thumbnail}" alt="${course.title}">` : `<div class="thumb" style="display:flex;align-items:center;justify-content:center;background:var(--border);color:var(--text-secondary);"><i class="fas fa-image" style="font-size:2.5rem;"></i></div>`}
+        <div class="info">
+          <h2>${course.title || 'Untitled Course'}</h2>
+          <div class="desc">${course.description || 'No description provided.'}</div>
+          <div class="meta">
+            <span><i class="fas fa-tag"></i> $${course.price || '0'}</span>
+            <span><i class="fas fa-calendar-alt"></i> ${course.createdAt ? new Date(course.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</span>
+            <span class="badge-status ${statusClass}">${statusLabel}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Language & Dark Mode
+    let lang = 'en';
+    const langToggle = document.getElementById('langToggle');
+    const darkToggle = document.getElementById('darkToggle');
+    const langLabel = document.getElementById('langLabel');
+    const main = document.getElementById('mainContent');
+
+    const translationMap = {
+      en: {
+        dashboard: 'Dashboard',
+        courses: 'Courses',
+        students: 'Students',
+        live: 'Live Classes',
+        revenue: 'Revenue',
+        settings: 'Settings',
+        logout: 'Logout',
+        statStudents: 'Students',
+        statLessons: 'Lessons',
+        statRevenue: 'Revenue',
+        statCompletion: 'Completion',
+        enrolledStudents: 'Enrolled Students',
+        viewLessons: '<i class="fas fa-file-alt"></i> View Lessons',
+        uploadLesson: '<i class="fas fa-upload"></i> Upload Lesson',
+        backToCourses: '<i class="fas fa-arrow-left"></i> Back to Courses',
+        loading: 'Loading course...',
+        noId: 'No course ID provided',
+        notFound: 'Course not found'
+      },
+      ar: {
+        dashboard: 'لوحة التحكم',
+        courses: 'الدورات',
+        students: 'الطلاب',
+        live: 'الحصص المباشرة',
+        revenue: 'الإيرادات',
+        settings: 'الإعدادات',
+        logout: 'تسجيل الخروج',
+        statStudents: 'الطلاب',
+        statLessons: 'الدروس',
+        statRevenue: 'الإيرادات',
+        statCompletion: 'الإنجاز',
+        enrolledStudents: 'الطلاب المسجلين',
+        viewLessons: '<i class="fas fa-file-alt"></i> عرض الدروس',
+        uploadLesson: '<i class="fas fa-upload"></i> رفع درس',
+        backToCourses: '<i class="fas fa-arrow-left"></i> العودة للدورات',
+        loading: 'جاري تحميل الدورة...',
+        noId: 'لا يوجد معرف دورة',
+        notFound: 'الدورة غير موجودة'
+      }
+    };
+
+    function applyLanguage(langCode) {
+      const map = translationMap[langCode];
+      document.querySelectorAll('[data-key]').forEach(el => {
+        const key = el.getAttribute('data-key');
+        if (map[key]) el.textContent = map[key];
+      });
+      // Update dynamic buttons
+      document.getElementById('viewLessonsBtn').innerHTML = map.viewLessons;
+      document.getElementById('uploadLessonBtn').innerHTML = map.uploadLesson;
+      // Update empty states if visible (if page already loaded)
+      const loadingEl = header.querySelector('.empty-state');
+      if (loadingEl) {
+        const spinner = loadingEl.querySelector('.fa-spinner');
+        if (spinner) {
+          loadingEl.innerHTML = `<i class="fas fa-spinner fa-spin"></i><br>${map.loading}`;
+        }
+      }
+      main.classList.toggle('rtl', langCode === 'ar');
+    }
+
+    langToggle.addEventListener('click', () => {
+      lang = lang === 'en' ? 'ar' : 'en';
+      langLabel.textContent = lang.toUpperCase();
+      applyLanguage(lang);
+    });
+
+    darkToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      darkToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+    });
+
+    // Initialize OneSignal
+    initOneSignal();
+
+    console.log('✅ Course Details ready (production mode)');
+  </script>
+</body>
+</html>
