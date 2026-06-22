@@ -4,37 +4,39 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
   <title>EduCore · Lessons Management</title>
-  
-  <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  
-  <!-- Shared styles -->
-  <link rel="stylesheet" href="shared.css">
-  
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
+      font-family: 'Inter', sans-serif;
+      background: #f4f7fc;
+      color: #0b1e33;
       display: flex;
       min-height: 100vh;
     }
+    body.dark-mode { background: #0b0e14; color: #eef2f6; }
 
+    /* Sidebar */
     .sidebar {
       width: 260px;
-      background: var(--card-bg);
-      border-right: 1px solid var(--border);
+      background: #ffffff;
+      border-right: 1px solid #e7edf5;
       padding: 2rem 1.2rem;
       display: flex;
       flex-direction: column;
-      transition: background 0.2s, border 0.2s;
-      position: sticky;
+      position: fixed;
       top: 0;
-      height: 100vh;
-      overflow-y: auto;
-      flex-shrink: 0;
-      z-index: 10;
+      left: 0;
+      bottom: 0;
+      z-index: 1000;
+      transition: transform 0.3s ease;
+      transform: translateX(0);
     }
+    body.dark-mode .sidebar { background: #141a26; border-right-color: #2a3442; }
+    .sidebar.closed { transform: translateX(-100%); }
     .sidebar-logo {
       display: flex;
       align-items: center;
@@ -43,18 +45,14 @@
     }
     .sidebar-logo i {
       font-size: 1.8rem;
-      color: var(--primary);
-      background: rgba(42,125,225,0.1);
+      color: #2a7de1;
+      background: #e8f0fe;
       padding: 0.6rem;
       border-radius: 14px;
     }
-    .sidebar-logo span {
-      font-weight: 700;
-      font-size: 1.5rem;
-      letter-spacing: -0.5px;
-      color: var(--text);
-    }
-    .sidebar-logo span small { color: var(--primary); }
+    body.dark-mode .sidebar-logo i { background: #1f2a40; color: #6b9ef0; }
+    .sidebar-logo span { font-weight: 700; font-size: 1.5rem; letter-spacing: -0.5px; }
+    .sidebar-logo span small { color: #2a7de1; }
     .sidebar nav { flex: 1; }
     .sidebar nav a {
       display: flex;
@@ -62,38 +60,57 @@
       gap: 0.8rem;
       padding: 0.8rem 1rem;
       border-radius: 12px;
-      color: var(--text-secondary);
+      color: #4a5b7a;
       text-decoration: none;
       font-weight: 500;
       transition: 0.15s;
       margin-bottom: 0.3rem;
     }
+    body.dark-mode .sidebar nav a { color: #b0c0d4; }
     .sidebar nav a i { width: 1.4rem; }
-    .sidebar nav a:hover,
-    .sidebar nav a.active {
-      background: rgba(42,125,225,0.1);
-      color: var(--primary);
+    .sidebar nav a:hover, .sidebar nav a.active {
+      background: #eef4fe;
+      color: #1a67c4;
+    }
+    body.dark-mode .sidebar nav a:hover, body.dark-mode .sidebar nav a.active {
+      background: #1f2a40;
+      color: #6b9ef0;
     }
     .sidebar-footer {
-      border-top: 1px solid var(--border);
+      border-top: 1px solid #e7edf5;
       padding-top: 1.2rem;
       margin-top: 0.5rem;
       font-size: 0.9rem;
       font-weight: 600;
-      color: var(--text-secondary);
+      color: #6b7d9c;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      transition: 0.15s;
     }
+    body.dark-mode .sidebar-footer { border-top-color: #2a3442; }
     .sidebar-footer:hover { color: #e74c3c; }
 
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 999;
+    }
+    .sidebar-overlay.show { display: block; }
+
+    /* Main */
     .main {
       flex: 1;
+      margin-left: 260px;
       padding: 1.8rem 2rem 2.5rem;
+      transition: margin-left 0.3s ease;
       overflow-x: hidden;
+      width: 100%;
     }
+    .main.expanded { margin-left: 0; }
+
     .navbar {
       display: flex;
       justify-content: space-between;
@@ -103,30 +120,36 @@
       margin-bottom: 2rem;
     }
     .navbar h1 { font-size: 1.7rem; font-weight: 700; }
-    .navbar-actions {
-      display: flex;
-      align-items: center;
-      gap: 1.2rem;
-    }
+    .navbar-actions { display: flex; align-items: center; gap: 1.2rem; }
     .navbar-actions button {
       background: none;
       border: none;
       font-size: 1.2rem;
-      color: var(--text-secondary);
+      color: #4a5b7a;
       cursor: pointer;
-      transition: 0.15s;
     }
-    .navbar-actions button:hover { color: var(--primary); }
+    body.dark-mode .navbar-actions button { color: #b0c0d4; }
+    .navbar-actions button:hover { color: #2a7de1; }
     .lang-dark { display: flex; gap: 0.6rem; }
     .lang-dark button {
       background: none;
       border: none;
       font-weight: 600;
-      color: var(--primary);
+      color: #2a7de1;
       cursor: pointer;
       font-size: 0.85rem;
     }
-    .lang-dark .dark-toggle { color: var(--text-secondary); }
+    .lang-dark .dark-toggle { color: #6b7d9c; }
+    body.dark-mode .lang-dark .dark-toggle { color: #b0c0d4; }
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #4a5b7a;
+      cursor: pointer;
+    }
+    body.dark-mode .hamburger { color: #b0c0d4; }
 
     .toolbar {
       display: flex;
@@ -140,14 +163,15 @@
       min-width: 200px;
       display: flex;
       align-items: center;
-      background: var(--card-bg);
-      border: 1.5px solid var(--border);
+      background: #ffffff;
+      border: 1.5px solid #dfe6f0;
       border-radius: 40px;
       padding: 0.4rem 0.4rem 0.4rem 1.2rem;
       transition: 0.15s;
     }
+    body.dark-mode .toolbar .search-box { background: #1a1f2b; border-color: #3b465b; }
     .toolbar .search-box:focus-within {
-      border-color: var(--primary);
+      border-color: #2a7de1;
       box-shadow: 0 0 0 4px rgba(42,125,225,0.1);
     }
     .toolbar .search-box input {
@@ -157,10 +181,11 @@
       flex: 1;
       font-size: 0.95rem;
       outline: none;
-      color: var(--text);
+      color: #1a253a;
     }
+    body.dark-mode .toolbar .search-box input { color: #eef2f6; }
     .toolbar .search-box button {
-      background: var(--primary);
+      background: #2a7de1;
       border: none;
       color: white;
       padding: 0.5rem 1.2rem;
@@ -169,23 +194,25 @@
       cursor: pointer;
       transition: 0.15s;
     }
-    .toolbar .search-box button:hover { background: var(--primary-hover); }
-    .filter-group {
-      display: flex;
-      gap: 0.6rem;
-      flex-wrap: wrap;
-    }
+    .toolbar .search-box button:hover { background: #1a67c4; }
+    .filter-group { display: flex; gap: 0.6rem; flex-wrap: wrap; }
     .filter-group select {
       padding: 0.6rem 1.2rem;
       border-radius: 40px;
-      border: 1.5px solid var(--border);
-      background: var(--card-bg);
+      border: 1.5px solid #dfe6f0;
+      background: #ffffff;
       font-weight: 500;
-      color: var(--text);
+      color: #1a253a;
       cursor: pointer;
     }
+    body.dark-mode .filter-group select {
+      background: #1a1f2b;
+      border-color: #3b465b;
+      color: #eef2f6;
+    }
+
     .btn-primary {
-      background: var(--primary);
+      background: #2a7de1;
       color: white;
       border: none;
       padding: 0.6rem 1.4rem;
@@ -198,10 +225,10 @@
       gap: 0.5rem;
       text-decoration: none;
     }
-    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:hover { background: #1a67c4; }
     .btn-secondary {
-      background: var(--bg);
-      color: var(--text);
+      background: #eef2f8;
+      color: #1a253a;
       border: none;
       padding: 0.6rem 1.4rem;
       border-radius: 40px;
@@ -213,37 +240,41 @@
       gap: 0.5rem;
       text-decoration: none;
     }
-    .btn-secondary:hover { background: var(--border); }
+    body.dark-mode .btn-secondary { background: #2a3442; color: #eef2f6; }
+    .btn-secondary:hover { background: #dfe6f0; }
 
     .table-wrapper {
-      background: var(--card-bg);
+      background: #ffffff;
       border-radius: 20px;
-      border: 1px solid var(--border);
+      border: 1px solid #eef2f8;
       overflow: hidden;
-      box-shadow: var(--shadow);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
     }
+    body.dark-mode .table-wrapper { background: #1a1f2b; border-color: #2a3442; }
     .table-responsive { overflow-x: auto; padding: 0.5rem; }
     table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    thead {
-      background: var(--bg);
-      border-bottom: 2px solid var(--border);
-    }
+    thead { background: #f9fbfe; border-bottom: 2px solid #eef2f8; }
+    body.dark-mode thead { background: #141a26; border-bottom-color: #2a3442; }
     th {
       text-align: left;
       padding: 0.9rem 1rem;
       font-weight: 600;
-      color: var(--text-secondary);
+      color: #4a5b7a;
       white-space: nowrap;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.3px;
     }
-    td {
-      padding: 0.9rem 1rem;
-      border-bottom: 1px solid var(--border);
-      vertical-align: middle;
-    }
+    body.dark-mode th { color: #b0c0d4; }
+    td { padding: 0.9rem 1rem; border-bottom: 1px solid #eef2f8; vertical-align: middle; }
+    body.dark-mode td { border-bottom-color: #2a3442; }
     tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(42,125,225,0.02); }
     .lesson-title { font-weight: 600; }
-    .lesson-course { color: var(--text-secondary); font-size: 0.85rem; }
+    .lesson-course { color: #6b7d9c; font-size: 0.85rem; }
+    body.dark-mode .lesson-course { color: #9aabbf; }
     .badge-status {
+      display: inline-block;
       padding: 0.2rem 0.8rem;
       border-radius: 30px;
       font-size: 0.7rem;
@@ -271,9 +302,10 @@
     .action-btns .delete { background: #fde8e8; color: #b3403a; }
     .action-btns .delete:hover { background: #f5c8c8; }
 
-    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: #8a9bb5; }
     .empty-state i { font-size: 3rem; margin-bottom: 0.8rem; opacity: 0.5; }
 
+    /* Modal */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -282,12 +314,12 @@
       backdrop-filter: blur(4px);
       align-items: center;
       justify-content: center;
-      z-index: 1000;
+      z-index: 2000;
       padding: 1.5rem;
     }
     .modal-overlay.active { display: flex; }
     .modal {
-      background: var(--card-bg);
+      background: #ffffff;
       border-radius: 28px;
       max-width: 520px;
       width: 100%;
@@ -296,6 +328,7 @@
       max-height: 90vh;
       overflow-y: auto;
     }
+    body.dark-mode .modal { background: #1a1f2b; }
     .modal h2 { margin-bottom: 1.2rem; font-weight: 700; }
     .modal .form-group { margin-bottom: 1.2rem; }
     .modal .form-group label {
@@ -304,53 +337,72 @@
       font-size: 0.9rem;
       margin-bottom: 0.3rem;
     }
-    .modal .form-group input, 
-    .modal .form-group textarea, 
-    .modal .form-group select {
+    .modal .form-group input, .modal .form-group textarea, .modal .form-group select {
       width: 100%;
       padding: 0.7rem 1rem;
-      border: 1.5px solid var(--border);
+      border: 1.5px solid #dfe6f0;
       border-radius: 14px;
       font-size: 0.95rem;
-      background: var(--bg);
-      color: var(--text);
+      background: #f9fbfe;
     }
-    .modal .form-group input:focus, 
-    .modal .form-group textarea:focus {
+    body.dark-mode .modal .form-group input,
+    body.dark-mode .modal .form-group textarea,
+    body.dark-mode .modal .form-group select {
+      background: #252d3d;
+      border-color: #3b465b;
+      color: #eef2f6;
+    }
+    .modal .form-group input:focus, .modal .form-group textarea:focus {
       outline: none;
-      border-color: var(--primary);
+      border-color: #2a7de1;
       box-shadow: 0 0 0 4px rgba(42,125,225,0.1);
     }
-    .form-actions {
-      display: flex;
-      gap: 0.8rem;
-      margin-top: 1.5rem;
-      justify-content: flex-end;
-    }
-    .form-actions button {
+    .modal .form-actions { display: flex; gap: 0.8rem; margin-top: 1.5rem; justify-content: flex-end; }
+    .modal .form-actions button {
       padding: 0.6rem 1.8rem;
       border-radius: 40px;
       border: none;
       font-weight: 600;
       cursor: pointer;
     }
-    .form-actions .cancel { background: var(--bg); color: var(--text); }
-    .form-actions .submit { background: var(--primary); color: white; }
-    .form-actions .submit:disabled { opacity: 0.6; cursor: not-allowed; }
+    .modal .form-actions .cancel { background: #eef2f8; color: #1a253a; }
+    .modal .form-actions .submit { background: #2a7de1; color: white; }
+    .modal .form-actions .submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
-    .action-bar {
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 3000;
       display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-      margin-bottom: 1.5rem;
+      flex-direction: column;
+      gap: 0.5rem;
     }
+    .toast {
+      padding: 0.8rem 1.5rem;
+      border-radius: 14px;
+      background: white;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      animation: slideIn 0.3s ease;
+    }
+    body.dark-mode .toast { background: #2a3442; color: #eef2f6; }
+    .toast.success { border-left: 4px solid #10B981; }
+    .toast.error { border-left: 4px solid #EF4444; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-    .rtl { direction: rtl; }
-    .rtl .sidebar nav a { flex-direction: row-reverse; }
+    .action-bar { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
 
     @media (max-width: 768px) {
-      .sidebar { display: none; }
-      .main { padding: 1.2rem; }
+      .hamburger { display: block; }
+      .main { margin-left: 0; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.closed { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
       .action-btns { flex-direction: column; }
     }
     @media (max-width: 480px) {
@@ -358,31 +410,39 @@
       .toolbar .search-box { width: 100%; }
       .action-bar { flex-direction: column; }
     }
+    .rtl { direction: rtl; }
+    .rtl .sidebar nav a { flex-direction: row-reverse; }
   </style>
 </head>
 <body>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <i class="fas fa-graduation-cap"></i>
       <span>Edu<small>Core</small></span>
     </div>
     <nav>
-      <a href="dashboard.html"><i class="fas fa-chart-pie"></i> <span data-key="dashboard">Dashboard</span></a>
-      <a href="courses.html"><i class="fas fa-book-open"></i> <span data-key="courses">Courses</span></a>
-      <a href="lessons.html" class="active"><i class="fas fa-file-alt"></i> <span data-key="lessons">Lessons</span></a>
-      <a href="students.html"><i class="fas fa-users"></i> <span data-key="students">Students</span></a>
-      <a href="live-classes.html"><i class="fas fa-video"></i> <span data-key="live">Live Classes</span></a>
-      <a href="revenue.html"><i class="fas fa-dollar-sign"></i> <span data-key="revenue">Revenue</span></a>
-      <a href="settings.html"><i class="fas fa-cog"></i> <span data-key="settings">Settings</span></a>
+      <a href="dashboard.html"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      <a href="courses.html"><i class="fas fa-book-open"></i> Courses</a>
+      <a href="lessons.html" class="active"><i class="fas fa-file-alt"></i> Lessons</a>
+      <a href="students.html"><i class="fas fa-users"></i> Students</a>
+      <a href="live-classes.html"><i class="fas fa-video"></i> Live Classes</a>
+      <a href="revenue.html"><i class="fas fa-dollar-sign"></i> Revenue</a>
+      <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
     </nav>
     <div class="sidebar-footer" id="logoutBtn">
-      <i class="fas fa-sign-out-alt"></i> <span data-key="logout">Logout</span>
+      <i class="fas fa-sign-out-alt"></i> Logout
     </div>
   </aside>
 
   <div class="main" id="mainContent">
     <header class="navbar">
-      <h1 id="pageTitle">📝 Lessons</h1>
+      <div style="display:flex; align-items:center; gap:1rem;">
+        <button class="hamburger" id="hamburgerBtn"><i class="fas fa-bars"></i></button>
+        <h1>📝 Lessons</h1>
+      </div>
       <div class="navbar-actions">
         <div class="lang-dark">
           <button id="langToggle"><i class="fas fa-globe"></i> <span id="langLabel">EN</span></button>
@@ -419,10 +479,10 @@
         <table>
           <thead>
             <tr>
-              <th data-key="thTitle">Title</th>
-              <th data-key="thCourse">Course</th>
-              <th data-key="thStatus">Status</th>
-              <th data-key="thActions" style="min-width: 180px;">Actions</th>
+              <th>Title</th>
+              <th>Course</th>
+              <th>Status</th>
+              <th style="min-width: 180px;">Actions</th>
             </tr>
           </thead>
           <tbody id="lessonsBody">
@@ -433,6 +493,7 @@
     </div>
   </div>
 
+  <!-- Edit Lesson Modal -->
   <div class="modal-overlay" id="lessonModal">
     <div class="modal">
       <h2 id="modalTitle">Edit Lesson</h2>
@@ -465,39 +526,87 @@
     </div>
   </div>
 
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
   <script type="module">
-    import { auth, db } from './firebase.js';
-    import { showToast, showLoading, hideLoading } from './shared.js';
-    import { initOneSignal } from './onesignal.js';
+    // ========== FIREBASE ==========
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
     import {
-      onAuthStateChanged,
-      signOut
-    } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js';
-    import {
+      getFirestore,
       collection,
       getDocs,
       updateDoc,
       deleteDoc,
       doc,
       query,
-      where,
       orderBy,
-      Timestamp,
-      addDoc
-    } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
+      Timestamp
+    } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-    // Auth protection
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOBJ22snwOow8xfQnL2WmCusmyS8iWWlk",
+      authDomain: "educore-c3b42.firebaseapp.com",
+      projectId: "educore-c3b42",
+      storageBucket: "educore-c3b42.firebasestorage.app",
+      messagingSenderId: "750509780814",
+      appId: "1:750509780814:web:f57bddff39c7668b3cf81f",
+      measurementId: "G-LF317C03Q0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // ========== AUTH ==========
     onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = 'login.html';
-      } else {
-        console.log('✅ Logged in as:', user.email);
+      if (!user) window.location.href = 'login.html';
+      else {
         document.body.classList.add('auth-ready');
         loadCourses();
         loadLessons();
       }
     });
 
+    // ========== MOBILE SIDEBAR ==========
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    document.getElementById('hamburgerBtn').addEventListener('click', () => {
+      sidebar.classList.add('open');
+      overlay.classList.add('show');
+    });
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+    });
+    document.querySelectorAll('.sidebar nav a').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('show');
+        }
+      });
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      if (confirm('Are you sure you want to logout?')) {
+        signOut(auth).then(() => window.location.href = 'login.html');
+      }
+    });
+
+    // ========== TOAST ==========
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${msg}`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ========== DATA ==========
     const urlParams = new URLSearchParams(window.location.search);
     const courseId = urlParams.get('courseId');
 
@@ -522,26 +631,11 @@
     let allCourses = [];
     let editingId = null;
 
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-      if (confirm('Are you sure you want to logout?')) {
-        try {
-          await signOut(auth);
-          window.location.href = 'login.html';
-        } catch (error) {
-          showToast('Logout failed.', 'error');
-        }
-      }
-    });
-
     async function loadCourses() {
       try {
         const snap = await getDocs(collection(db, 'courses'));
         allCourses = [];
-        snap.forEach(doc => {
-          allCourses.push({ id: doc.id, ...doc.data() });
-        });
-
+        snap.forEach(doc => allCourses.push({ id: doc.id, ...doc.data() }));
         courseFilter.innerHTML = '<option value="all">All Courses</option>';
         formCourse.innerHTML = '';
         allCourses.forEach(c => {
@@ -549,6 +643,7 @@
           formCourse.innerHTML += `<option value="${c.id}">${c.title || 'Untitled'}</option>`;
         });
 
+        // If courseId provided, set filters and links
         if (courseId) {
           courseFilter.value = courseId;
           backToCourseBtn.href = `course-details.html?id=${courseId}`;
@@ -558,25 +653,20 @@
           uploadLessonBtn.href = 'lesson-upload.html';
         }
       } catch (e) {
-        showToast('Failed to load courses.', 'error');
+        showToast('Failed to load courses', 'error');
       }
     }
 
     async function loadLessons() {
-      showLoading();
       try {
         const q = query(collection(db, 'lessons'), orderBy('createdAt', 'desc'));
         const snap = await getDocs(q);
         allLessons = [];
-        snap.forEach(doc => {
-          allLessons.push({ id: doc.id, ...doc.data() });
-        });
+        snap.forEach(doc => allLessons.push({ id: doc.id, ...doc.data() }));
         renderLessons();
       } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="fas fa-exclamation-triangle"></i><br>Error loading lessons</div></td></tr>`;
-        showToast('Failed to load lessons.', 'error');
-      } finally {
-        hideLoading();
+        showToast('Failed to load lessons', 'error');
+        tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><i class="fas fa-exclamation-triangle"></i><br>Error loading lessons</div></td></tr>';
       }
     }
 
@@ -593,7 +683,7 @@
       });
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><i class="fas fa-file-alt"></i><br>No lessons found</div></td></tr>`;
+        tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><i class="fas fa-file-alt"></i><br>No lessons found</div></td></tr>';
         return;
       }
 
@@ -602,7 +692,6 @@
         const statusClass = l.status === 'unpublished' ? 'unpublished' : '';
         const statusLabel = l.status || 'published';
         const isPublished = l.status === 'published';
-        
         return `
           <tr>
             <td><div class="lesson-title">${l.title || 'Untitled'}</div></td>
@@ -647,15 +736,8 @@
           status,
           updatedAt: Timestamp.now()
         };
-
-        if (editingId) {
-          await updateDoc(doc(db, 'lessons', editingId), data);
-          showToast('Lesson updated successfully', 'success');
-        } else {
-          data.createdAt = Timestamp.now();
-          await addDoc(collection(db, 'lessons'), data);
-          showToast('Lesson created successfully', 'success');
-        }
+        await updateDoc(doc(db, 'lessons', editingId), data);
+        showToast('Lesson updated!', 'success');
         closeModal();
         loadLessons();
       } catch (err) {
@@ -672,9 +754,7 @@
         await deleteDoc(doc(db, 'lessons', id));
         showToast('Lesson deleted', 'success');
         loadLessons();
-      } catch (e) {
-        showToast('Error deleting lesson', 'error');
-      }
+      } catch (e) { showToast('Error deleting lesson', 'error'); }
     }
 
     async function togglePublish(id) {
@@ -684,9 +764,7 @@
         await updateDoc(doc(db, 'lessons', id), { status: newStatus });
         showToast(`Lesson ${newStatus === 'published' ? 'published' : 'unpublished'}`, 'success');
         loadLessons();
-      } catch (e) {
-        showToast('Error updating status', 'error');
-      }
+      } catch (e) { showToast('Error updating status', 'error'); }
     }
 
     function openEdit(id) {
@@ -704,7 +782,6 @@
 
     function closeModal() {
       modal.classList.remove('active');
-      form.reset();
     }
 
     modalCancel.addEventListener('click', closeModal);
@@ -714,82 +791,27 @@
     statusFilter.addEventListener('change', renderLessons);
     courseFilter.addEventListener('change', renderLessons);
 
-    // Language & Dark Mode
+    // ========== LANGUAGE & DARK MODE ==========
     let lang = 'en';
     const langToggle = document.getElementById('langToggle');
     const darkToggle = document.getElementById('darkToggle');
     const langLabel = document.getElementById('langLabel');
-    const main = document.getElementById('mainContent');
-
-    const translationMap = {
-      en: {
-        dashboard: 'Dashboard',
-        courses: 'Courses',
-        lessons: 'Lessons',
-        students: 'Students',
-        live: 'Live Classes',
-        revenue: 'Revenue',
-        settings: 'Settings',
-        logout: 'Logout',
-        pageTitle: '📝 Lessons',
-        searchPlaceholder: 'Search lessons...',
-        allStatus: 'All Status',
-        published: 'Published',
-        unpublished: 'Unpublished',
-        allCourses: 'All Courses',
-        thTitle: 'Title',
-        thCourse: 'Course',
-        thStatus: 'Status',
-        thActions: 'Actions',
-        backToCourse: '<i class="fas fa-arrow-left"></i> Back to Course',
-        uploadLesson: '<i class="fas fa-upload"></i> Upload New Lesson'
-      },
-      ar: {
-        dashboard: 'لوحة التحكم',
-        courses: 'الدورات',
-        lessons: 'الدروس',
-        students: 'الطلاب',
-        live: 'الحصص المباشرة',
-        revenue: 'الإيرادات',
-        settings: 'الإعدادات',
-        logout: 'تسجيل الخروج',
-        pageTitle: '📝 الدروس',
-        searchPlaceholder: 'بحث عن دروس...',
-        allStatus: 'جميع الحالات',
-        published: 'منشور',
-        unpublished: 'غير منشور',
-        allCourses: 'جميع الدورات',
-        thTitle: 'العنوان',
-        thCourse: 'الدورة',
-        thStatus: 'الحالة',
-        thActions: 'إجراءات',
-        backToCourse: '<i class="fas fa-arrow-left"></i> العودة للدورة',
-        uploadLesson: '<i class="fas fa-upload"></i> رفع درس جديد'
-      }
-    };
-
-    function applyLanguage(langCode) {
-      const map = translationMap[langCode];
-      document.querySelectorAll('[data-key]').forEach(el => {
-        const key = el.getAttribute('data-key');
-        if (map[key]) el.textContent = map[key];
-      });
-      document.getElementById('pageTitle').textContent = map.pageTitle;
-      document.getElementById('searchInput').placeholder = map.searchPlaceholder;
-      document.querySelector('#statusFilter option[value="all"]').textContent = map.allStatus;
-      document.querySelector('#statusFilter option[value="published"]').textContent = map.published;
-      document.querySelector('#statusFilter option[value="unpublished"]').textContent = map.unpublished;
-      // Course filter "all" option
-      document.querySelector('#courseFilter option[value="all"]').textContent = map.allCourses;
-      document.getElementById('backToCourseBtn').innerHTML = map.backToCourse;
-      document.getElementById('uploadLessonBtn').innerHTML = map.uploadLesson;
-      main.classList.toggle('rtl', langCode === 'ar');
-    }
+    const mainEl = document.getElementById('mainContent');
 
     langToggle.addEventListener('click', () => {
       lang = lang === 'en' ? 'ar' : 'en';
       langLabel.textContent = lang.toUpperCase();
-      applyLanguage(lang);
+      document.querySelector('.navbar h1').textContent = lang === 'ar' ? '📝 الدروس' : '📝 Lessons';
+      document.querySelector('.search-box input').placeholder = lang === 'ar' ? 'بحث عن دروس...' : 'Search lessons...';
+      document.querySelector('#statusFilter option[value="all"]').textContent = lang === 'ar' ? 'جميع الحالات' : 'All Status';
+      document.querySelector('#statusFilter option[value="published"]').textContent = lang === 'ar' ? 'منشور' : 'Published';
+      document.querySelector('#statusFilter option[value="unpublished"]').textContent = lang === 'ar' ? 'غير منشور' : 'Unpublished';
+      document.querySelector('#courseFilter option[value="all"]').textContent = lang === 'ar' ? 'جميع الدورات' : 'All Courses';
+      document.querySelectorAll('th')[0].textContent = lang === 'ar' ? 'العنوان' : 'Title';
+      document.querySelectorAll('th')[1].textContent = lang === 'ar' ? 'الدورة' : 'Course';
+      document.querySelectorAll('th')[2].textContent = lang === 'ar' ? 'الحالة' : 'Status';
+      document.querySelectorAll('th')[3].textContent = lang === 'ar' ? 'إجراءات' : 'Actions';
+      mainEl.classList.toggle('rtl', lang === 'ar');
     });
 
     darkToggle.addEventListener('click', () => {
@@ -798,10 +820,7 @@
       darkToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     });
 
-    // Init OneSignal
-    initOneSignal();
-
-    console.log('✅ Lessons Management ready (production mode)');
+    console.log('✅ Lessons Management ready.');
   </script>
 </body>
 </html>
