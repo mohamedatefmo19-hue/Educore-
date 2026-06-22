@@ -4,36 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
   <title>EduCore · Teacher Login</title>
-  
-  <!-- Font & Icons -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  
-  <!-- Shared styles -->
-  <link rel="stylesheet" href="shared.css">
-  
   <style>
-    /* ----- Login Page Specific (uses shared variables) ----- */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
+      font-family: 'Inter', sans-serif;
+      background: #f4f7fc;
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
       padding: 1.5rem;
     }
-
     .login-card {
-      background: var(--card-bg);
+      background: #ffffff;
       max-width: 440px;
       width: 100%;
       padding: 2.5rem 2rem 2.2rem;
       border-radius: 2rem;
-      box-shadow: var(--shadow);
-      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
     }
-
     .logo-area {
       display: flex;
       align-items: center;
@@ -42,8 +33,8 @@
     }
     .logo-icon {
       font-size: 2rem;
-      color: var(--primary);
-      background: rgba(42,125,225,0.1);
+      color: #2a7de1;
+      background: #e8f0fe;
       width: 48px;
       height: 48px;
       display: flex;
@@ -55,52 +46,46 @@
       font-weight: 700;
       font-size: 1.6rem;
       letter-spacing: -0.5px;
-      color: var(--text);
+      color: #0b1e33;
     }
-    .logo-text span { color: var(--primary); }
+    .logo-text span { color: #2a7de1; }
     .subhead {
       font-size: 0.9rem;
-      color: var(--text-secondary);
+      color: #5e6f8d;
       margin-top: 0.2rem;
       font-weight: 500;
     }
-
-    .form-group {
-      margin-bottom: 1.4rem;
-      position: relative;
-    }
+    .form-group { margin-bottom: 1.4rem; position: relative; }
     .form-group label {
       display: block;
       font-weight: 600;
       font-size: 0.9rem;
       margin-bottom: 0.4rem;
-      color: var(--text);
+      color: #1f2a41;
     }
-    .input-wrapper {
-      position: relative;
-    }
+    .input-wrapper { position: relative; }
     .input-wrapper i {
       position: absolute;
       left: 1rem;
       top: 50%;
       transform: translateY(-50%);
-      color: var(--text-secondary);
+      color: #8a9bb5;
       font-size: 1rem;
     }
     .input-wrapper input {
       width: 100%;
       padding: 0.9rem 1rem 0.9rem 2.8rem;
-      border: 1.5px solid var(--border);
+      border: 1.5px solid #dfe6f0;
       border-radius: 14px;
       font-size: 1rem;
-      background: var(--bg);
+      background: #f9fbfe;
       transition: 0.15s;
       font-weight: 500;
-      color: var(--text);
+      color: #1a253a;
     }
     .input-wrapper input:focus {
       outline: none;
-      border-color: var(--primary);
+      border-color: #2a7de1;
       box-shadow: 0 0 0 4px rgba(42,125,225,0.15);
     }
     .input-wrapper .toggle-pwd {
@@ -110,15 +95,11 @@
       transform: translateY(-50%);
       background: none;
       border: none;
-      color: var(--text-secondary);
+      color: #8a9bb5;
       font-size: 1rem;
       cursor: pointer;
       padding: 0.3rem;
     }
-    .input-wrapper .toggle-pwd:hover {
-      color: var(--primary);
-    }
-
     .form-options {
       display: flex;
       justify-content: space-between;
@@ -132,29 +113,22 @@
       align-items: center;
       gap: 0.5rem;
       font-size: 0.9rem;
-      color: var(--text-secondary);
+      color: #2f3b57;
     }
-    .remember-me input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--primary);
-      cursor: pointer;
-    }
+    .remember-me input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2a7de1; }
     .forgot-link {
       font-size: 0.9rem;
       font-weight: 600;
-      color: var(--primary);
+      color: #2a7de1;
       text-decoration: none;
       background: none;
       border: none;
       cursor: pointer;
     }
-    .forgot-link:hover { text-decoration: underline; }
-
     .btn-login {
       width: 100%;
       padding: 0.9rem;
-      background: var(--primary);
+      background: #2a7de1;
       border: none;
       border-radius: 40px;
       font-weight: 700;
@@ -168,69 +142,66 @@
       transition: 0.15s;
       box-shadow: 0 8px 20px -6px rgba(42,125,225,0.3);
     }
-    .btn-login:hover { background: var(--primary-hover); transform: scale(1.01); }
-    .btn-login:disabled { opacity: 0.7; transform: none; cursor: not-allowed; }
-
+    .btn-login:disabled { opacity: 0.7; cursor: not-allowed; }
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.25);
+      border-top: 3px solid #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .message-box {
+      margin-top: 1.2rem;
+      padding: 0.8rem 1rem;
+      border-radius: 14px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      display: none;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .message-box.error { display: flex; background: #fde8e8; color: #b3403a; border-left: 5px solid #b3403a; }
+    .message-box.success { display: flex; background: #e3f5e9; color: #1f7840; border-left: 5px solid #1f7840; }
     .footer-lang {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-top: 2rem;
       font-size: 0.8rem;
-      color: var(--text-secondary);
-      border-top: 1px solid var(--border);
+      color: #6b7d9c;
+      border-top: 1px solid #e7edf5;
       padding-top: 1.5rem;
     }
-    .lang-toggle, .dark-toggle {
-      background: none;
-      border: none;
-      font-weight: 600;
-      color: var(--primary);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      font-size: 0.8rem;
-    }
-    .dark-toggle { color: var(--text-secondary); }
-
-    .rtl { direction: rtl; }
-    .rtl .input-wrapper i { left: auto; right: 1rem; }
-    .rtl .input-wrapper input { padding: 0.9rem 2.8rem 0.9rem 1rem; }
-    .rtl .input-wrapper .toggle-pwd { right: auto; left: 1rem; }
-    .rtl .form-options { flex-direction: row-reverse; }
-
-    @media (max-width: 480px) {
-      .login-card { padding: 1.8rem 1.2rem; }
-    }
+    @media (max-width: 480px) { .login-card { padding: 1.8rem 1.2rem; } }
   </style>
 </head>
 <body>
-  <div class="login-card" id="loginCard">
+  <div class="login-card">
     <div class="logo-area">
       <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
       <div>
         <div class="logo-text">Edu<span>Core</span></div>
-        <div class="subhead" id="subhead">Teacher Portal</div>
+        <div class="subhead">Teacher Portal</div>
       </div>
     </div>
 
     <form id="loginForm" autocomplete="off">
       <div class="form-group">
-        <label for="emailInput"><i class="fas fa-envelope" style="margin-right: 6px;"></i> Email</label>
+        <label for="emailInput">Email</label>
         <div class="input-wrapper">
           <i class="fas fa-envelope"></i>
           <input type="email" id="emailInput" placeholder="teacher@educore.com" required>
         </div>
       </div>
       <div class="form-group">
-        <label for="passwordInput"><i class="fas fa-lock" style="margin-right: 6px;"></i> Password</label>
+        <label for="passwordInput">Password</label>
         <div class="input-wrapper">
           <i class="fas fa-lock"></i>
           <input type="password" id="passwordInput" placeholder="••••••••" required>
-          <button type="button" class="toggle-pwd" id="togglePwd" aria-label="Show password">
-            <i class="fas fa-eye"></i>
-          </button>
+          <button type="button" class="toggle-pwd" id="togglePwd"><i class="fas fa-eye"></i></button>
         </div>
       </div>
 
@@ -238,7 +209,7 @@
         <label class="remember-me">
           <input type="checkbox" id="rememberMe"> <span>Remember me</span>
         </label>
-        <button type="button" class="forgot-link" id="forgotPasswordBtn"><i class="fas fa-key"></i> Forgot password?</button>
+        <button type="button" class="forgot-link" id="forgotPasswordBtn">Forgot password?</button>
       </div>
 
       <button type="submit" class="btn-login" id="loginBtn">
@@ -247,118 +218,65 @@
       </button>
     </form>
 
-    <div class="footer-lang">
-      <div>
-        <button class="lang-toggle" id="langToggle"><i class="fas fa-globe"></i> <span id="langLabel">English</span></button>
-      </div>
-      <button class="dark-toggle" id="darkToggle"><i class="fas fa-moon"></i> <span id="darkLabel">Dark</span></button>
+    <div id="messageBox" class="message-box">
+      <i id="msgIcon" class="fas fa-info-circle"></i>
+      <span id="msgText"></span>
     </div>
   </div>
 
   <script type="module">
     import { auth } from './firebase.js';
-    import { initOneSignal } from './onesignal.js';
-    import { showToast } from './shared.js';
+    import {
+      signInWithEmailAndPassword,
+      sendPasswordResetEmail,
+      setPersistence,
+      browserLocalPersistence,
+      browserSessionPersistence,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 
-    // DOM refs
     const emailInput = document.getElementById('emailInput');
     const passwordInput = document.getElementById('passwordInput');
     const loginForm = document.getElementById('loginForm');
     const loginBtn = document.getElementById('loginBtn');
     const btnText = document.getElementById('btnText');
     const btnSpinner = document.getElementById('btnSpinner');
+    const messageBox = document.getElementById('messageBox');
+    const msgText = document.getElementById('msgText');
+    const msgIcon = document.getElementById('msgIcon');
     const rememberMe = document.getElementById('rememberMe');
     const forgotBtn = document.getElementById('forgotPasswordBtn');
     const togglePwd = document.getElementById('togglePwd');
-    const langToggle = document.getElementById('langToggle');
-    const darkToggle = document.getElementById('darkToggle');
-    const subhead = document.getElementById('subhead');
-    const langLabel = document.getElementById('langLabel');
-    const darkLabel = document.getElementById('darkLabel');
-    const loginCard = document.getElementById('loginCard');
 
-    let currentLang = 'en';
-    let isDark = false;
-
+    function showMessage(text, type = 'error') {
+      messageBox.className = `message-box ${type}`;
+      msgText.textContent = text;
+      msgIcon.className = type === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
+      messageBox.style.display = 'flex';
+    }
+    function hideMessage() { messageBox.style.display = 'none'; }
     function setLoading(isLoading) {
       loginBtn.disabled = isLoading;
       btnText.style.display = isLoading ? 'none' : 'inline';
       btnSpinner.style.display = isLoading ? 'inline' : 'none';
     }
+    function validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
 
-    function validateEmail(email) {
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    }
-
-    // RTL / LTR
-    function setLanguage(lang) {
-      currentLang = lang;
-      const card = document.getElementById('loginCard');
-      if (lang === 'ar') {
-        card.classList.add('rtl');
-        document.documentElement.lang = 'ar';
-        langLabel.textContent = 'العربية';
-        subhead.textContent = 'بوابة المعلم';
-        emailInput.placeholder = 'البريد الإلكتروني';
-        passwordInput.placeholder = '••••••••';
-        document.querySelector('label[for="emailInput"]').innerHTML = '<i class="fas fa-envelope" style="margin-left: 6px;"></i> البريد الإلكتروني';
-        document.querySelector('label[for="passwordInput"]').innerHTML = '<i class="fas fa-lock" style="margin-left: 6px;"></i> كلمة المرور';
-        document.querySelector('.remember-me span').textContent = 'تذكرني';
-        forgotBtn.innerHTML = '<i class="fas fa-key"></i> نسيت كلمة المرور؟';
-        btnText.textContent = 'تسجيل الدخول';
-      } else {
-        card.classList.remove('rtl');
-        document.documentElement.lang = 'en';
-        langLabel.textContent = 'English';
-        subhead.textContent = 'Teacher Portal';
-        emailInput.placeholder = 'teacher@educore.com';
-        passwordInput.placeholder = '••••••••';
-        document.querySelector('label[for="emailInput"]').innerHTML = '<i class="fas fa-envelope" style="margin-right: 6px;"></i> Email';
-        document.querySelector('label[for="passwordInput"]').innerHTML = '<i class="fas fa-lock" style="margin-right: 6px;"></i> Password';
-        document.querySelector('.remember-me span').textContent = 'Remember me';
-        forgotBtn.innerHTML = '<i class="fas fa-key"></i> Forgot password?';
-        btnText.textContent = 'Sign in';
-      }
-    }
-
-    function toggleDark() {
-      isDark = !isDark;
-      document.body.classList.toggle('dark-mode', isDark);
-      darkLabel.textContent = isDark ? 'Light' : 'Dark';
-      darkToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i> ' : '<i class="fas fa-moon"></i> ';
-      darkToggle.innerHTML += darkLabel.textContent;
-    }
-
-    // Login
-    import { 
-      signInWithEmailAndPassword, 
-      sendPasswordResetEmail,
-      setPersistence,
-      browserLocalPersistence,
-      browserSessionPersistence,
-      onAuthStateChanged
-    } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js';
-
-    async function handleLogin(e) {
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      hideMessage();
       const email = emailInput.value.trim();
       const password = passwordInput.value;
 
-      if (!validateEmail(email)) {
-        showToast('Please enter a valid email address.', 'error');
-        return;
-      }
-      if (password.length < 6) {
-        showToast('Password must be at least 6 characters.', 'error');
-        return;
-      }
+      if (!validateEmail(email)) { showMessage('Please enter a valid email.', 'error'); return; }
+      if (password.length < 6) { showMessage('Password must be at least 6 characters.', 'error'); return; }
 
       setLoading(true);
       try {
         await setPersistence(auth, rememberMe.checked ? browserLocalPersistence : browserSessionPersistence);
         const userCred = await signInWithEmailAndPassword(auth, email, password);
         setLoading(false);
-        showToast('✅ Login successful! Redirecting…', 'success');
+        showMessage('✅ Login successful! Redirecting…', 'success');
         setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
       } catch (error) {
         setLoading(false);
@@ -366,26 +284,23 @@
         if (error.code === 'auth/user-not-found') msg = 'No user found with this email.';
         else if (error.code === 'auth/wrong-password') msg = 'Incorrect password.';
         else if (error.code === 'auth/too-many-requests') msg = 'Too many attempts. Try later.';
-        showToast(msg, 'error');
+        showMessage(msg, 'error');
       }
-    }
+    });
 
-    async function handleForgotPassword() {
+    forgotBtn.addEventListener('click', async () => {
       const email = emailInput.value.trim();
-      if (!validateEmail(email)) {
-        showToast('Please enter your email address first.', 'error');
-        return;
-      }
+      if (!validateEmail(email)) { showMessage('Please enter your email first.', 'error'); return; }
       setLoading(true);
       try {
         await sendPasswordResetEmail(auth, email);
         setLoading(false);
-        showToast('✅ Password reset email sent!', 'success');
+        showMessage('✅ Password reset email sent!', 'success');
       } catch (error) {
         setLoading(false);
-        showToast(error.code === 'auth/user-not-found' ? 'No user found with this email.' : 'Unable to send reset email.', 'error');
+        showMessage(error.code === 'auth/user-not-found' ? 'No user found with this email.' : 'Unable to send reset email.', 'error');
       }
-    }
+    });
 
     togglePwd.addEventListener('click', () => {
       const type = passwordInput.type === 'password' ? 'text' : 'password';
@@ -393,22 +308,13 @@
       togglePwd.querySelector('i').className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
     });
 
-    loginForm.addEventListener('submit', handleLogin);
-    forgotBtn.addEventListener('click', handleForgotPassword);
-    langToggle.addEventListener('click', () => setLanguage(currentLang === 'en' ? 'ar' : 'en'));
-    darkToggle.addEventListener('click', toggleDark);
-
-    // Auto-redirect if already logged in
+    // Redirect if already logged in
     onAuthStateChanged(auth, (user) => {
       if (user) {
+        console.log('Already logged in, redirecting to dashboard...');
         window.location.href = 'dashboard.html';
       }
     });
-
-    setLanguage('en');
-
-    // Initialize OneSignal (if SDK loaded, will be loaded in full app)
-    initOneSignal();
   </script>
 </body>
 </html>
