@@ -19,6 +19,7 @@
       min-height: 100vh;
     }
     body.dark-mode { background: #0b0e14; color: #eef2f6; }
+    /* Sidebar */
     .sidebar {
       width: 260px;
       background: #ffffff;
@@ -26,13 +27,16 @@
       padding: 2rem 1.2rem;
       display: flex;
       flex-direction: column;
-      position: sticky;
+      position: fixed;
       top: 0;
-      height: 100vh;
-      overflow-y: auto;
-      flex-shrink: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 1000;
+      transition: transform 0.3s ease;
+      transform: translateX(0);
     }
     body.dark-mode .sidebar { background: #141a26; border-right-color: #2a3442; }
+    .sidebar.closed { transform: translateX(-100%); }
     .sidebar-logo {
       display: flex;
       align-items: center;
@@ -47,11 +51,7 @@
       border-radius: 14px;
     }
     body.dark-mode .sidebar-logo i { background: #1f2a40; color: #6b9ef0; }
-    .sidebar-logo span {
-      font-weight: 700;
-      font-size: 1.5rem;
-      letter-spacing: -0.5px;
-    }
+    .sidebar-logo span { font-weight: 700; font-size: 1.5rem; letter-spacing: -0.5px; }
     .sidebar-logo span small { color: #2a7de1; }
     .sidebar nav { flex: 1; }
     .sidebar nav a {
@@ -90,11 +90,28 @@
     }
     body.dark-mode .sidebar-footer { border-top-color: #2a3442; }
     .sidebar-footer:hover { color: #e74c3c; }
+
+    /* Overlay for mobile */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 999;
+    }
+    .sidebar-overlay.show { display: block; }
+
+    /* Main */
     .main {
       flex: 1;
+      margin-left: 260px;
       padding: 1.8rem 2rem 2.5rem;
+      transition: margin-left 0.3s ease;
       overflow-x: hidden;
+      width: 100%;
     }
+    .main.expanded { margin-left: 0; }
+
     .navbar {
       display: flex;
       justify-content: space-between;
@@ -125,6 +142,16 @@
     }
     .lang-dark .dark-toggle { color: #6b7d9c; }
     body.dark-mode .lang-dark .dark-toggle { color: #b0c0d4; }
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #4a5b7a;
+      cursor: pointer;
+    }
+    body.dark-mode .hamburger { color: #b0c0d4; }
+
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -146,11 +173,8 @@
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
-    .stat-card .value {
-      font-size: 1.9rem;
-      font-weight: 700;
-      margin: 0.4rem 0 0.1rem;
-    }
+    .stat-card .value { font-size: 1.9rem; font-weight: 700; margin: 0.4rem 0 0.1rem; }
+
     .row-2col {
       display: grid;
       grid-template-columns: 2fr 1fr;
@@ -179,21 +203,31 @@
     body.dark-mode .activity-item, body.dark-mode .live-item { border-bottom-color: #2a3442; }
     .activity-item i { width: 1.8rem; color: #2a7de1; }
     .live-item i { color: #e67e22; }
-    .empty-state {
-      color: #8a9bb5;
-      text-align: center;
-      padding: 1.5rem 0;
-      font-size: 0.9rem;
-    }
+    .empty-state { color: #8a9bb5; text-align: center; padding: 1.5rem 0; font-size: 0.9rem; }
     .live-item .time { margin-left: auto; font-size: 0.8rem; color: #6b7d9c; }
+
+    .badge-notif {
+      position: absolute;
+      top: -6px;
+      right: -8px;
+      background: #e74c3c;
+      color: white;
+      font-size: 0.6rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 30px;
+      font-weight: 700;
+    }
+
     @media (max-width: 992px) { .row-2col { grid-template-columns: 1fr; } }
     @media (max-width: 768px) {
-      .sidebar { display: none; }
-      .main { padding: 1.2rem; }
-      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .hamburger { display: block; }
+      .main { margin-left: 0; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.closed { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
     }
     @media (max-width: 480px) {
-      .stats-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
       .navbar { flex-direction: column; align-items: stretch; }
     }
     .rtl { direction: rtl; }
@@ -202,6 +236,11 @@
   </style>
 </head>
 <body>
+
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <i class="fas fa-graduation-cap"></i>
@@ -220,15 +259,22 @@
     </div>
   </aside>
 
+  <!-- Main Content -->
   <div class="main" id="mainContent">
     <header class="navbar">
-      <h1 id="pageTitle">Dashboard</h1>
+      <div style="display:flex; align-items:center; gap:1rem;">
+        <button class="hamburger" id="hamburgerBtn"><i class="fas fa-bars"></i></button>
+        <h1 id="pageTitle">Dashboard</h1>
+      </div>
       <div class="navbar-actions">
         <div class="lang-dark">
           <button id="langToggle"><i class="fas fa-globe"></i> <span id="langLabel">EN</span></button>
           <button class="dark-toggle" id="darkToggle"><i class="fas fa-moon"></i></button>
         </div>
-        <button id="notifBtn"><i class="fas fa-bell"></i><span class="badge" id="notifBadge" style="position:absolute;top:-6px;right:-8px;background:#e74c3c;color:white;font-size:0.6rem;padding:0.15rem 0.45rem;border-radius:30px;">3</span></button>
+        <button id="notifBtn" style="position:relative;">
+          <i class="fas fa-bell"></i>
+          <span class="badge-notif" id="notifBadge">3</span>
+        </button>
         <button><i class="fas fa-user-circle" style="font-size:1.6rem;"></i></button>
       </div>
     </header>
@@ -259,7 +305,7 @@
   </div>
 
   <script type="module">
-    // ========== FIREBASE CONFIG ==========
+    // ========== FIREBASE SETUP ==========
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
     import { getFirestore, collection, getDocs, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
@@ -278,7 +324,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Auth protection
+    // ========== AUTH PROTECTION ==========
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = 'login.html';
@@ -290,14 +336,39 @@
       }
     });
 
-    // Logout
+    // ========== MOBILE SIDEBAR TOGGLE ==========
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const mainContent = document.getElementById('mainContent');
+
+    function openSidebar() {
+      sidebar.classList.add('open');
+      overlay.classList.add('show');
+    }
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+    }
+
+    hamburgerBtn.addEventListener('click', openSidebar);
+    overlay.addEventListener('click', closeSidebar);
+
+    // Close sidebar when a navigation link is clicked (on mobile)
+    document.querySelectorAll('.sidebar nav a').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 768) closeSidebar();
+      });
+    });
+
+    // ========== LOGOUT ==========
     document.getElementById('logoutBtn').addEventListener('click', () => {
       if (confirm('Are you sure you want to logout?')) {
         signOut(auth).then(() => window.location.href = 'login.html');
       }
     });
 
-    // Dashboard functions
+    // ========== DASHBOARD DATA ==========
     const totalStudentsEl = document.getElementById('totalStudents');
     const totalCoursesEl = document.getElementById('totalCourses');
     const totalLessonsEl = document.getElementById('totalLessons');
@@ -309,7 +380,7 @@
     let chart = null;
 
     function formatCurrency(amount) {
-      return '$' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      return '$' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 0 });
     }
 
     async function loadDashboardData() {
@@ -344,7 +415,7 @@
         const activitiesQuery = query(collection(db, 'activities'), orderBy('timestamp', 'desc'), limit(5));
         const activitiesSnap = await getDocs(activitiesQuery);
         if (activitiesSnap.empty) {
-          recentDiv.innerHTML = `<div class="empty-state">No recent activities</div>`;
+          recentDiv.innerHTML = '<div class="empty-state">No recent activities</div>';
         } else {
           let html = '';
           activitiesSnap.forEach(doc => {
@@ -356,7 +427,7 @@
           recentDiv.innerHTML = html;
         }
 
-        // Upcoming live
+        // Upcoming live sessions
         const liveQuery = query(collection(db, 'liveClasses'), orderBy('startTime', 'asc'));
         const liveSnap2 = await getDocs(liveQuery);
         let hasLive = false;
@@ -370,13 +441,13 @@
             liveHtml += `<div class="live-item"><i class="fas fa-video"></i> ${title} <span class="time">${time}</span></div>`;
           }
         });
-        upcomingDiv.innerHTML = hasLive ? liveHtml : `<div class="empty-state">No upcoming live sessions</div>`;
+        upcomingDiv.innerHTML = hasLive ? liveHtml : '<div class="empty-state">No upcoming live sessions</div>';
 
         // Chart
         const chartData = await fetchChartData();
         renderChart(chartData);
 
-        // Notifications
+        // Notifications badge
         const notifSnap = await getDocs(collection(db, 'notifications'));
         let unread = 0;
         notifSnap.forEach(doc => {
@@ -444,7 +515,7 @@
           if (data.status === 'upcoming' || data.status === 'live') live++;
         });
         liveClassesEl.textContent = live;
-        loadDashboardData();
+        loadDashboardData(); // refresh list
       });
       onSnapshot(collection(db, 'transactions'), (snap) => {
         let total = 0;
@@ -453,39 +524,25 @@
       });
     }
 
-    // Language & Dark Mode
+    // ========== LANGUAGE & DARK MODE ==========
     let lang = 'en';
     const langToggle = document.getElementById('langToggle');
     const darkToggle = document.getElementById('darkToggle');
     const langLabel = document.getElementById('langLabel');
-    const main = document.getElementById('mainContent');
+    const mainEl = document.getElementById('mainContent');
 
     const translationMap = {
       en: {
-        dashboard: 'Dashboard',
-        courses: 'Courses',
-        students: 'Students',
-        live: 'Live Classes',
-        revenue: 'Revenue',
-        settings: 'Settings',
-        logout: 'Logout',
-        analytics: 'Analytics (last 6 weeks)',
-        recent: 'Recent Activities',
-        upcoming: 'Upcoming Live Sessions',
-        pageTitle: 'Dashboard'
+        dashboard: 'Dashboard', courses: 'Courses', students: 'Students', live: 'Live Classes',
+        revenue: 'Revenue', settings: 'Settings', logout: 'Logout',
+        analytics: 'Analytics (last 6 weeks)', recent: 'Recent Activities',
+        upcoming: 'Upcoming Live Sessions', pageTitle: 'Dashboard'
       },
       ar: {
-        dashboard: 'لوحة التحكم',
-        courses: 'الدورات',
-        students: 'الطلاب',
-        live: 'الحصص المباشرة',
-        revenue: 'الإيرادات',
-        settings: 'الإعدادات',
-        logout: 'تسجيل الخروج',
-        analytics: 'التحليلات (آخر 6 أسابيع)',
-        recent: 'النشاطات الأخيرة',
-        upcoming: 'الحصص المباشرة القادمة',
-        pageTitle: 'لوحة التحكم'
+        dashboard: 'لوحة التحكم', courses: 'الدورات', students: 'الطلاب', live: 'الحصص المباشرة',
+        revenue: 'الإيرادات', settings: 'الإعدادات', logout: 'تسجيل الخروج',
+        analytics: 'التحليلات (آخر 6 أسابيع)', recent: 'النشاطات الأخيرة',
+        upcoming: 'الحصص المباشرة القادمة', pageTitle: 'لوحة التحكم'
       }
     };
 
@@ -496,7 +553,7 @@
         if (map[key]) el.textContent = map[key];
       });
       document.getElementById('pageTitle').textContent = map.pageTitle;
-      main.classList.toggle('rtl', langCode === 'ar');
+      mainEl.classList.toggle('rtl', langCode === 'ar');
     }
 
     langToggle.addEventListener('click', () => {
