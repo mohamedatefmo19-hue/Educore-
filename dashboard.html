@@ -290,14 +290,15 @@
   </div>
 
   <script type="module">
-    // ========== FIREBASE SETUP ==========
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
     import {
       getFirestore,
       collection,
       getDocs,
-      onSnapshot
+      onSnapshot,
+      doc,
+      updateDoc
     } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -314,7 +315,6 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // عناصر DOM
     const totalStudentsEl = document.getElementById('totalStudents');
     const totalCoursesEl = document.getElementById('totalCourses');
     const totalLessonsEl = document.getElementById('totalLessons');
@@ -328,14 +328,14 @@
     const hamburgerBtn = document.getElementById('hamburgerBtn');
 
     if (!totalStudentsEl || !totalCoursesEl || !totalLessonsEl || !liveClassesEl || !revenueEl) {
-      alert('خطأ: لم يتم العثور على بعض عناصر الصفحة. يرجى إعادة رفع الملف.');
+      alert('خطأ في تحميل عناصر الصفحة. أعد رفع الملف.');
       throw new Error('Missing DOM elements');
     }
 
     let TEACHER_ID = '';
     let chart = null;
 
-    // ========== AUTH ==========
+    // ---------- AUTH ----------
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = 'login.html';
@@ -348,7 +348,7 @@
       }
     });
 
-    // ========== MOBILE SIDEBAR ==========
+    // ---------- SIDEBAR MOBILE ----------
     hamburgerBtn?.addEventListener('click', () => {
       sidebar.classList.add('open');
       overlay.classList.add('show');
@@ -366,7 +366,7 @@
       });
     });
 
-    // ========== LOGOUT ==========
+    // ---------- LOGOUT ----------
     document.getElementById('logoutBtn')?.addEventListener('click', () => {
       if (confirm('Are you sure you want to logout?')) {
         signOut(auth).then(() => window.location.href = 'login.html');
@@ -377,9 +377,22 @@
       return '$' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 0 });
     }
 
+    // ---------- إضافة teacherId للمستندات التي تفتقده ----------
+    async function ensureTeacherId(collectionName, docs) {
+      const updates = [];
+      docs.forEach(d => {
+        if (!d.teacherId) {
+          console.log(`Adding teacherId to ${collectionName}/${d.id}`);
+          updates.push(
+            updateDoc(doc(db, collectionName, d.id), { teacherId: TEACHER_ID }).catch(e => console.warn(e))
+          );
+        }
+      });
+      await Promise.all(updates);
+    }
+
     async function loadDashboardData() {
       try {
-        // جلب جميع المستندات بدون where ولا orderBy – القواعد ستتولى الفلترة
         const [studentsSnap, coursesSnap, lessonsSnap, liveSnap, revenueSnap] = await Promise.all([
           getDocs(collection(db, 'students')),
           getDocs(collection(db, 'courses')),
@@ -388,95 +401,82 @@
           getDocs(collection(db, 'transactions'))
         ]);
 
-        totalStudentsEl.textContent = studentsSnap.size;
-        totalCoursesEl.textContent = coursesSnap.size;
-        totalLessonsEl.textContent = lessonsSnap.size;
+        const students = studentsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const courses = coursesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const lessons = lessonsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const lives = liveSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const revenues = revenueSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // أضف teacherId فورًا لكل ما ينقصه
+        await Promise.all([
+          ensureTeacherId('students', students),
+          ensureTeacherId('courses', courses),
+          ensureTeacherId('lessons', lessons),
+          ensureTeacherId('liveClasses', lives),
+          ensureTeacherId('transactions', revenues)
+        ]);
+
+        totalStudentsEl.textContent = students.length;
+        totalCoursesEl.textContent = courses.length;
+        totalLessonsEl.textContent = lessons.length;
 
         let liveCount = 0;
-        liveSnap.forEach(doc => {
-          const data = doc.data();
-          if (data.status === 'upcoming' || data.status === 'live') liveCount++;
+        lives.forEach(l => {
+          if (l.status === 'upcoming' || l.status === 'live') liveCount++;
         });
         liveClassesEl.textContent = liveCount;
 
         let totalRevenue = 0;
-        revenueSnap.forEach(doc => {
-          const data = doc.data();
-          if (data.amount) totalRevenue += Number(data.amount);
-        });
+        revenues.forEach(r => { if (r.amount) totalRevenue += Number(r.amount); });
         revenueEl.textContent = formatCurrency(totalRevenue);
 
         // الأنشطة الأخيرة
         const activitiesSnap = await getDocs(collection(db, 'activities'));
-        const activities = [];
-        activitiesSnap.forEach(doc => activities.push({ id: doc.id, ...doc.data() }));
+        const activities = activitiesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        await ensureTeacherId('activities', activities);
         activities.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         const recent = activities.slice(0, 5);
-        if (recent.length === 0) {
-          recentDiv.innerHTML = '<div class="empty-state">No recent activities</div>';
-        } else {
-          let html = '';
-          recent.forEach(item => {
-            const text = item.text || 'Activity';
-            const icon = item.icon || 'fa-circle';
-            html += `<div class="activity-item"><i class="fas ${icon}"></i> ${text}</div>`;
-          });
-          recentDiv.innerHTML = html;
-        }
+        recentDiv.innerHTML = recent.length === 0
+          ? '<div class="empty-state">No recent activities</div>'
+          : recent.map(item => {
+              const text = item.text || 'Activity';
+              const icon = item.icon || 'fa-circle';
+              return `<div class="activity-item"><i class="fas ${icon}"></i> ${text}</div>`;
+            }).join('');
 
-        // الحصص المباشرة القادمة
-        const liveSnap2 = await getDocs(collection(db, 'liveClasses'));
-        const lives = [];
-        liveSnap2.forEach(doc => {
-          const data = doc.data();
-          if (data.status === 'upcoming' || data.status === 'live') {
-            lives.push({ id: doc.id, ...data });
-          }
-        });
-        lives.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
-        if (lives.length === 0) {
-          upcomingDiv.innerHTML = '<div class="empty-state">No upcoming live sessions</div>';
-        } else {
-          let liveHtml = '';
-          lives.forEach(l => {
-            const title = l.title || 'Live Session';
-            const time = l.startTime ? new Date(l.startTime.seconds * 1000).toLocaleString() : 'TBD';
-            liveHtml += `<div class="live-item"><i class="fas fa-video"></i> ${title} <span class="time">${time}</span></div>`;
-          });
-          upcomingDiv.innerHTML = liveHtml;
-        }
+        // الحصص القادمة (استخدمنا lives أعلاه)
+        const upcoming = lives.filter(l => l.status === 'upcoming' || l.status === 'live');
+        upcoming.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
+        upcomingDiv.innerHTML = upcoming.length === 0
+          ? '<div class="empty-state">No upcoming live sessions</div>'
+          : upcoming.map(l => {
+              const title = l.title || 'Live Session';
+              const time = l.startTime ? new Date(l.startTime.seconds * 1000).toLocaleString() : 'TBD';
+              return `<div class="live-item"><i class="fas fa-video"></i> ${title} <span class="time">${time}</span></div>`;
+            }).join('');
 
         // الرسم البياني
-        const chartData = await fetchChartData();
-        renderChart(chartData);
+        const analyticsSnap = await getDocs(collection(db, 'analytics'));
+        const analyticsDocs = analyticsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        await ensureTeacherId('analytics', analyticsDocs);
+        const dataMap = {};
+        analyticsDocs.forEach(d => { if (d.week && d.value !== undefined) dataMap[d.week] = d.value; });
+        const weeks = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6'];
+        const values = weeks.map(w => dataMap[w] !== undefined ? dataMap[w] : Math.floor(Math.random() * 40 + 20));
+        renderChart({ labels: weeks, values });
 
         // الإشعارات
         const notifSnap = await getDocs(collection(db, 'notifications'));
+        const notifs = notifSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        await ensureTeacherId('notifications', notifs);
         let unread = 0;
-        notifSnap.forEach(doc => {
-          if (doc.data().read === false) unread++;
-        });
+        notifs.forEach(n => { if (n.read === false) unread++; });
         notifBadge.textContent = unread > 0 ? unread : '0';
         notifBadge.style.display = unread > 0 ? 'inline' : 'none';
+
       } catch (error) {
         console.error('Dashboard error:', error);
         alert('Failed to load dashboard data: ' + error.message);
-      }
-    }
-
-    async function fetchChartData() {
-      try {
-        const analyticsSnap = await getDocs(collection(db, 'analytics'));
-        const dataMap = {};
-        analyticsSnap.forEach(doc => {
-          const d = doc.data();
-          if (d.week && d.value !== undefined) dataMap[d.week] = d.value;
-        });
-        const weeks = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6'];
-        const values = weeks.map(w => dataMap[w] !== undefined ? dataMap[w] : Math.floor(Math.random() * 40 + 20));
-        return { labels: weeks, values };
-      } catch {
-        return { labels: ['W1','W2','W3','W4','W5','W6'], values: [28, 35, 42, 38, 45, 52] };
       }
     }
 
@@ -509,30 +509,34 @@
     }
 
     function listenToUpdates() {
-      // مستمعات الوقت الحقيقي – لا where ولا orderBy
       onSnapshot(collection(db, 'students'), (snap) => {
-        totalStudentsEl.textContent = snap.size;
+        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        ensureTeacherId('students', docs);
+        totalStudentsEl.textContent = docs.length;
       });
       onSnapshot(collection(db, 'courses'), (snap) => {
-        totalCoursesEl.textContent = snap.size;
+        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        ensureTeacherId('courses', docs);
+        totalCoursesEl.textContent = docs.length;
       });
       onSnapshot(collection(db, 'liveClasses'), (snap) => {
+        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        ensureTeacherId('liveClasses', docs);
         let live = 0;
-        snap.forEach(doc => {
-          const data = doc.data();
-          if (data.status === 'upcoming' || data.status === 'live') live++;
-        });
+        docs.forEach(d => { if (d.status === 'upcoming' || d.status === 'live') live++; });
         liveClassesEl.textContent = live;
         loadDashboardData(); // تحديث القائمة القادمة
       });
       onSnapshot(collection(db, 'transactions'), (snap) => {
+        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        ensureTeacherId('transactions', docs);
         let total = 0;
-        snap.forEach(doc => { if (doc.data().amount) total += Number(doc.data().amount); });
+        docs.forEach(d => { if (d.amount) total += Number(d.amount); });
         revenueEl.textContent = formatCurrency(total);
       });
     }
 
-    // ========== LANGUAGE & DARK MODE ==========
+    // ---------- LANGUAGE & DARK MODE ----------
     let lang = 'en';
     const langToggle = document.getElementById('langToggle');
     const darkToggle = document.getElementById('darkToggle');
@@ -581,7 +585,7 @@
       alert('📬 Notifications: You have ' + notifBadge.textContent + ' unread messages.');
     });
 
-    console.log('✅ Dashboard script loaded successfully.');
+    console.log('✅ Dashboard script loaded – auto‑adds teacherId.');
   </script>
 </body>
 </html>
