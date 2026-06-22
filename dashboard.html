@@ -316,9 +316,29 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // ========== AUTH PROTECTION ==========
-    let TEACHER_ID = '';
+    // عناصر الـ DOM - سنتحقق من وجودها قبل الاستخدام
+    const totalStudentsEl = document.getElementById('totalStudents');
+    const totalCoursesEl = document.getElementById('totalCourses');
+    const totalLessonsEl = document.getElementById('totalLessons');
+    const liveClassesEl = document.getElementById('liveClasses');
+    const revenueEl = document.getElementById('revenue');
+    const recentDiv = document.getElementById('recentActivities');
+    const upcomingDiv = document.getElementById('upcomingLives');
+    const notifBadge = document.getElementById('notifBadge');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
 
+    // تأكد من وجود جميع العناصر الأساسية
+    if (!totalStudentsEl || !totalCoursesEl || !totalLessonsEl || !liveClassesEl || !revenueEl) {
+      alert('خطأ: لم يتم العثور على بعض عناصر الصفحة. يرجى إعادة رفع الملف.');
+      throw new Error('Missing DOM elements');
+    }
+
+    let TEACHER_ID = '';
+    let chart = null;
+
+    // ========== AUTH ==========
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = 'login.html';
@@ -326,21 +346,17 @@
         TEACHER_ID = user.uid;
         console.log('✅ Logged in as:', user.email);
         document.body.classList.add('auth-ready');
-        loadDashboardData();
+        loadDashboardData().catch(e => alert('Dashboard load error: ' + e.message));
         listenToUpdates();
       }
     });
 
-    // ========== MOBILE SIDEBAR TOGGLE ==========
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    const hamburgerBtn = document.getElementById('hamburgerBtn');
-
-    hamburgerBtn.addEventListener('click', () => {
+    // ========== MOBILE SIDEBAR ==========
+    hamburgerBtn?.addEventListener('click', () => {
       sidebar.classList.add('open');
       overlay.classList.add('show');
     });
-    overlay.addEventListener('click', () => {
+    overlay?.addEventListener('click', () => {
       sidebar.classList.remove('open');
       overlay.classList.remove('show');
     });
@@ -354,113 +370,96 @@
     });
 
     // ========== LOGOUT ==========
-    document.getElementById('logoutBtn').addEventListener('click', () => {
+    document.getElementById('logoutBtn')?.addEventListener('click', () => {
       if (confirm('Are you sure you want to logout?')) {
         signOut(auth).then(() => window.location.href = 'login.html');
       }
     });
-
-    // ========== DASHBOARD DATA ==========
-    const totalStudentsEl = document.getElementById('totalStudents');
-    const totalCoursesEl = document.getElementById('totalCourses');
-    const totalLessonsEl = document.getElementById('totalLessons');
-    const liveClassesEl = document.getElementById('liveClasses');
-    const revenueEl = document.getElementById('revenue');
-    const recentDiv = document.getElementById('recentActivities');
-    const upcomingDiv = document.getElementById('upcomingLives');
-    const notifBadge = document.getElementById('notifBadge');
-    let chart = null;
 
     function formatCurrency(amount) {
       return '$' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 0 });
     }
 
     async function loadDashboardData() {
-      try {
-        // Fetch counts (only where, no orderBy)
-        const [studentsSnap, coursesSnap, lessonsSnap, liveSnap, revenueSnap] = await Promise.all([
-          getDocs(query(collection(db, 'students'), where("teacherId", "==", TEACHER_ID))),
-          getDocs(query(collection(db, 'courses'), where("teacherId", "==", TEACHER_ID))),
-          getDocs(query(collection(db, 'lessons'), where("teacherId", "==", TEACHER_ID))),
-          getDocs(query(collection(db, 'liveClasses'), where("teacherId", "==", TEACHER_ID))),
-          getDocs(query(collection(db, 'transactions'), where("teacherId", "==", TEACHER_ID)))
-        ]);
+      // جلب جميع المجموعات بدون orderBy لتجنب مشكلة الفهارس
+      const [studentsSnap, coursesSnap, lessonsSnap, liveSnap, revenueSnap] = await Promise.all([
+        getDocs(query(collection(db, 'students'), where("teacherId", "==", TEACHER_ID))),
+        getDocs(query(collection(db, 'courses'), where("teacherId", "==", TEACHER_ID))),
+        getDocs(query(collection(db, 'lessons'), where("teacherId", "==", TEACHER_ID))),
+        getDocs(query(collection(db, 'liveClasses'), where("teacherId", "==", TEACHER_ID))),
+        getDocs(query(collection(db, 'transactions'), where("teacherId", "==", TEACHER_ID)))
+      ]);
 
-        totalStudentsEl.textContent = studentsSnap.size;
-        totalCoursesEl.textContent = coursesSnap.size;
-        totalLessonsEl.textContent = lessonsSnap.size;
+      totalStudentsEl.textContent = studentsSnap.size;
+      totalCoursesEl.textContent = coursesSnap.size;
+      totalLessonsEl.textContent = lessonsSnap.size;
 
-        let liveCount = 0;
-        liveSnap.forEach(doc => {
-          const data = doc.data();
-          if (data.status === 'upcoming' || data.status === 'live') liveCount++;
+      let liveCount = 0;
+      liveSnap.forEach(doc => {
+        const data = doc.data();
+        if (data.status === 'upcoming' || data.status === 'live') liveCount++;
+      });
+      liveClassesEl.textContent = liveCount;
+
+      let totalRevenue = 0;
+      revenueSnap.forEach(doc => {
+        const data = doc.data();
+        if (data.amount) totalRevenue += Number(data.amount);
+      });
+      revenueEl.textContent = formatCurrency(totalRevenue);
+
+      // الأنشطة الأخيرة
+      const activitiesSnap = await getDocs(query(collection(db, 'activities'), where("teacherId", "==", TEACHER_ID)));
+      const activities = [];
+      activitiesSnap.forEach(doc => activities.push({ id: doc.id, ...doc.data() }));
+      activities.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+      const recent = activities.slice(0, 5);
+      if (recent.length === 0) {
+        recentDiv.innerHTML = '<div class="empty-state">No recent activities</div>';
+      } else {
+        let html = '';
+        recent.forEach(item => {
+          const text = item.text || 'Activity';
+          const icon = item.icon || 'fa-circle';
+          html += `<div class="activity-item"><i class="fas ${icon}"></i> ${text}</div>`;
         });
-        liveClassesEl.textContent = liveCount;
-
-        let totalRevenue = 0;
-        revenueSnap.forEach(doc => {
-          const data = doc.data();
-          if (data.amount) totalRevenue += Number(data.amount);
-        });
-        revenueEl.textContent = formatCurrency(totalRevenue);
-
-        // Recent activities (filtered by teacherId, sorted client-side)
-        const activitiesSnap = await getDocs(query(collection(db, 'activities'), where("teacherId", "==", TEACHER_ID)));
-        const activities = [];
-        activitiesSnap.forEach(doc => activities.push({ id: doc.id, ...doc.data() }));
-        activities.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-        const recent = activities.slice(0, 5);
-        if (recent.length === 0) {
-          recentDiv.innerHTML = '<div class="empty-state">No recent activities</div>';
-        } else {
-          let html = '';
-          recent.forEach(item => {
-            const text = item.text || 'Activity';
-            const icon = item.icon || 'fa-circle';
-            html += `<div class="activity-item"><i class="fas ${icon}"></i> ${text}</div>`;
-          });
-          recentDiv.innerHTML = html;
-        }
-
-        // Upcoming live sessions (filtered, sorted client-side)
-        const liveSnap2 = await getDocs(query(collection(db, 'liveClasses'), where("teacherId", "==", TEACHER_ID)));
-        const lives = [];
-        liveSnap2.forEach(doc => {
-          const data = doc.data();
-          if (data.status === 'upcoming' || data.status === 'live') {
-            lives.push({ id: doc.id, ...data });
-          }
-        });
-        lives.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
-        if (lives.length === 0) {
-          upcomingDiv.innerHTML = '<div class="empty-state">No upcoming live sessions</div>';
-        } else {
-          let liveHtml = '';
-          lives.forEach(l => {
-            const title = l.title || 'Live Session';
-            const time = l.startTime ? new Date(l.startTime.seconds * 1000).toLocaleString() : 'TBD';
-            liveHtml += `<div class="live-item"><i class="fas fa-video"></i> ${title} <span class="time">${time}</span></div>`;
-          });
-          upcomingDiv.innerHTML = liveHtml;
-        }
-
-        // Chart data (analytics)
-        const chartData = await fetchChartData();
-        renderChart(chartData);
-
-        // Notifications badge
-        const notifSnap = await getDocs(query(collection(db, 'notifications'), where("teacherId", "==", TEACHER_ID)));
-        let unread = 0;
-        notifSnap.forEach(doc => {
-          if (doc.data().read === false) unread++;
-        });
-        notifBadge.textContent = unread > 0 ? unread : '0';
-        notifBadge.style.display = unread > 0 ? 'inline' : 'none';
-
-      } catch (error) {
-        console.error('Dashboard error:', error);
-        alert('Failed to load dashboard data. ' + error.message);
+        recentDiv.innerHTML = html;
       }
+
+      // الحصص المباشرة القادمة
+      const liveSnap2 = await getDocs(query(collection(db, 'liveClasses'), where("teacherId", "==", TEACHER_ID)));
+      const lives = [];
+      liveSnap2.forEach(doc => {
+        const data = doc.data();
+        if (data.status === 'upcoming' || data.status === 'live') {
+          lives.push({ id: doc.id, ...data });
+        }
+      });
+      lives.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
+      if (lives.length === 0) {
+        upcomingDiv.innerHTML = '<div class="empty-state">No upcoming live sessions</div>';
+      } else {
+        let liveHtml = '';
+        lives.forEach(l => {
+          const title = l.title || 'Live Session';
+          const time = l.startTime ? new Date(l.startTime.seconds * 1000).toLocaleString() : 'TBD';
+          liveHtml += `<div class="live-item"><i class="fas fa-video"></i> ${title} <span class="time">${time}</span></div>`;
+        });
+        upcomingDiv.innerHTML = liveHtml;
+      }
+
+      // الرسم البياني
+      const chartData = await fetchChartData();
+      renderChart(chartData);
+
+      // الإشعارات
+      const notifSnap = await getDocs(query(collection(db, 'notifications'), where("teacherId", "==", TEACHER_ID)));
+      let unread = 0;
+      notifSnap.forEach(doc => {
+        if (doc.data().read === false) unread++;
+      });
+      notifBadge.textContent = unread > 0 ? unread : '0';
+      notifBadge.style.display = unread > 0 ? 'inline' : 'none';
     }
 
     async function fetchChartData() {
@@ -480,7 +479,8 @@
     }
 
     function renderChart(data) {
-      const ctx = document.getElementById('analyticsChart').getContext('2d');
+      const ctx = document.getElementById('analyticsChart')?.getContext('2d');
+      if (!ctx) return;
       if (chart) chart.destroy();
       chart = new Chart(ctx, {
         type: 'line',
@@ -507,7 +507,6 @@
     }
 
     function listenToUpdates() {
-      // Real‑time listeners (only where, no orderBy)
       onSnapshot(query(collection(db, 'students'), where("teacherId", "==", TEACHER_ID)), (snap) => {
         totalStudentsEl.textContent = snap.size;
       });
@@ -521,7 +520,7 @@
           if (data.status === 'upcoming' || data.status === 'live') live++;
         });
         liveClassesEl.textContent = live;
-        loadDashboardData(); // refresh upcoming list
+        loadDashboardData();
       });
       onSnapshot(query(collection(db, 'transactions'), where("teacherId", "==", TEACHER_ID)), (snap) => {
         let total = 0;
@@ -562,24 +561,24 @@
       mainEl.classList.toggle('rtl', langCode === 'ar');
     }
 
-    langToggle.addEventListener('click', () => {
+    langToggle?.addEventListener('click', () => {
       lang = lang === 'en' ? 'ar' : 'en';
       langLabel.textContent = lang.toUpperCase();
       applyLanguage(lang);
     });
 
-    darkToggle.addEventListener('click', () => {
+    darkToggle?.addEventListener('click', () => {
       document.body.classList.toggle('dark-mode');
       const isDark = document.body.classList.contains('dark-mode');
       darkToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     });
 
-    document.getElementById('notifBtn').addEventListener('click', () => {
+    document.getElementById('notifBtn')?.addEventListener('click', () => {
       notifBadge.style.display = 'none';
       alert('📬 Notifications: You have ' + notifBadge.textContent + ' unread messages.');
     });
 
-    console.log('✅ EduCore Dashboard ready (teacher-scoped, no composite indexes).');
+    console.log('✅ Dashboard script loaded successfully.');
   </script>
 </body>
 </html>
