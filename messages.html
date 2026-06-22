@@ -4,38 +4,39 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
   <title>EduCore · Messages</title>
-
-  <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-  <!-- Shared styles -->
-  <link rel="stylesheet" href="shared.css">
-
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
+      font-family: 'Inter', sans-serif;
+      background: #f4f7fc;
+      color: #0b1e33;
       display: flex;
       min-height: 100vh;
     }
+    body.dark-mode { background: #0b0e14; color: #eef2f6; }
 
     /* Sidebar */
     .sidebar {
       width: 260px;
-      background: var(--card-bg);
-      border-right: 1px solid var(--border);
+      background: #ffffff;
+      border-right: 1px solid #e7edf5;
       padding: 2rem 1.2rem;
       display: flex;
       flex-direction: column;
-      transition: background 0.2s, border 0.2s;
-      position: sticky;
+      position: fixed;
       top: 0;
-      height: 100vh;
-      overflow-y: auto;
-      flex-shrink: 0;
-      z-index: 10;
+      left: 0;
+      bottom: 0;
+      z-index: 1000;
+      transition: transform 0.3s ease;
+      transform: translateX(0);
     }
+    body.dark-mode .sidebar { background: #141a26; border-right-color: #2a3442; }
+    .sidebar.closed { transform: translateX(-100%); }
     .sidebar-logo {
       display: flex;
       align-items: center;
@@ -44,18 +45,14 @@
     }
     .sidebar-logo i {
       font-size: 1.8rem;
-      color: var(--primary);
-      background: rgba(42,125,225,0.1);
+      color: #2a7de1;
+      background: #e8f0fe;
       padding: 0.6rem;
       border-radius: 14px;
     }
-    .sidebar-logo span {
-      font-weight: 700;
-      font-size: 1.5rem;
-      letter-spacing: -0.5px;
-      color: var(--text);
-    }
-    .sidebar-logo span small { color: var(--primary); }
+    body.dark-mode .sidebar-logo i { background: #1f2a40; color: #6b9ef0; }
+    .sidebar-logo span { font-weight: 700; font-size: 1.5rem; letter-spacing: -0.5px; }
+    .sidebar-logo span small { color: #2a7de1; }
     .sidebar nav { flex: 1; }
     .sidebar nav a {
       display: flex;
@@ -63,36 +60,50 @@
       gap: 0.8rem;
       padding: 0.8rem 1rem;
       border-radius: 12px;
-      color: var(--text-secondary);
+      color: #4a5b7a;
       text-decoration: none;
       font-weight: 500;
       transition: 0.15s;
       margin-bottom: 0.3rem;
     }
+    body.dark-mode .sidebar nav a { color: #b0c0d4; }
     .sidebar nav a i { width: 1.4rem; }
-    .sidebar nav a:hover,
-    .sidebar nav a.active {
-      background: rgba(42,125,225,0.1);
-      color: var(--primary);
+    .sidebar nav a:hover, .sidebar nav a.active {
+      background: #eef4fe;
+      color: #1a67c4;
+    }
+    body.dark-mode .sidebar nav a:hover, body.dark-mode .sidebar nav a.active {
+      background: #1f2a40;
+      color: #6b9ef0;
     }
     .sidebar-footer {
-      border-top: 1px solid var(--border);
+      border-top: 1px solid #e7edf5;
       padding-top: 1.2rem;
       margin-top: 0.5rem;
       font-size: 0.9rem;
       font-weight: 600;
-      color: var(--text-secondary);
+      color: #6b7d9c;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      transition: 0.15s;
     }
+    body.dark-mode .sidebar-footer { border-top-color: #2a3442; }
     .sidebar-footer:hover { color: #e74c3c; }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 999;
+    }
+    .sidebar-overlay.show { display: block; }
 
     /* Main */
     .main {
       flex: 1;
+      margin-left: 260px;
       display: flex;
       flex-direction: column;
       height: 100vh;
@@ -104,35 +115,42 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 1rem;
-      padding: 1.2rem 2rem;
-      border-bottom: 1px solid var(--border);
-      background: var(--card-bg);
+      padding: 1rem 2rem;
+      border-bottom: 1px solid #e7edf5;
+      background: #ffffff;
     }
+    body.dark-mode .navbar { background: #141a26; border-bottom-color: #2a3442; }
     .navbar h1 { font-size: 1.5rem; font-weight: 700; }
-    .navbar-actions {
-      display: flex;
-      align-items: center;
-      gap: 1.2rem;
-    }
+    .navbar-actions { display: flex; align-items: center; gap: 1.2rem; }
     .navbar-actions button {
       background: none;
       border: none;
       font-size: 1.2rem;
-      color: var(--text-secondary);
+      color: #4a5b7a;
       cursor: pointer;
-      transition: 0.15s;
     }
-    .navbar-actions button:hover { color: var(--primary); }
+    body.dark-mode .navbar-actions button { color: #b0c0d4; }
+    .navbar-actions button:hover { color: #2a7de1; }
     .lang-dark { display: flex; gap: 0.6rem; }
     .lang-dark button {
       background: none;
       border: none;
       font-weight: 600;
-      color: var(--primary);
+      color: #2a7de1;
       cursor: pointer;
       font-size: 0.85rem;
     }
-    .lang-dark .dark-toggle { color: var(--text-secondary); }
+    .lang-dark .dark-toggle { color: #6b7d9c; }
+    body.dark-mode .lang-dark .dark-toggle { color: #b0c0d4; }
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #4a5b7a;
+      cursor: pointer;
+    }
+    body.dark-mode .hamburger { color: #b0c0d4; }
 
     .chat-container {
       flex: 1;
@@ -143,38 +161,37 @@
     /* Conversations Panel */
     .conversations-panel {
       width: 340px;
-      border-right: 1px solid var(--border);
+      border-right: 1px solid #e7edf5;
       display: flex;
       flex-direction: column;
-      background: var(--card-bg);
+      background: #ffffff;
     }
+    body.dark-mode .conversations-panel { background: #1a1f2b; border-right-color: #2a3442; }
     .conversations-header {
       padding: 1rem;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid #e7edf5;
     }
+    body.dark-mode .conversations-header { border-bottom-color: #2a3442; }
     .search-box {
       position: relative;
     }
     .search-box input {
       width: 100%;
       padding: 0.6rem 1rem 0.6rem 2.4rem;
-      border: 1.5px solid var(--border);
+      border: 1.5px solid #dfe6f0;
       border-radius: 40px;
       font-size: 0.9rem;
-      background: var(--bg);
-      color: var(--text);
+      background: #f9fbfe;
+      color: #1a253a;
     }
-    .search-box input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(42,125,225,0.1);
-    }
+    body.dark-mode .search-box input { background: #252d3d; border-color: #3b465b; color: #eef2f6; }
+    .search-box input:focus { outline: none; border-color: #2a7de1; box-shadow: 0 0 0 3px rgba(42,125,225,0.1); }
     .search-box i {
       position: absolute;
       left: 0.8rem;
       top: 50%;
       transform: translateY(-50%);
-      color: var(--text-secondary);
+      color: #8a9bb5;
     }
     .conversations-list {
       flex: 1;
@@ -182,22 +199,22 @@
     }
     .conversation-item {
       padding: 0.8rem 1rem;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid #eef2f8;
       cursor: pointer;
       transition: background 0.15s;
       display: flex;
       align-items: center;
       gap: 0.8rem;
     }
-    .conversation-item:hover,
-    .conversation-item.active {
+    body.dark-mode .conversation-item { border-bottom-color: #2a3442; }
+    .conversation-item:hover, .conversation-item.active {
       background: rgba(42,125,225,0.04);
     }
     .conversation-avatar {
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      background: var(--primary);
+      background: #2a7de1;
       color: white;
       display: flex;
       align-items: center;
@@ -206,28 +223,18 @@
       font-size: 1.1rem;
       flex-shrink: 0;
     }
-    .conversation-info {
-      flex: 1;
-      min-width: 0;
-    }
-    .conversation-name {
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
+    .conversation-info { flex: 1; min-width: 0; }
+    .conversation-name { font-weight: 600; font-size: 0.9rem; }
     .conversation-preview {
       font-size: 0.8rem;
-      color: var(--text-secondary);
+      color: #8a9bb5;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .conversation-meta {
-      text-align: right;
-      font-size: 0.7rem;
-      color: var(--text-secondary);
-    }
+    .conversation-meta { text-align: right; font-size: 0.7rem; color: #8a9bb5; }
     .unread-badge {
-      background: var(--primary);
+      background: #2a7de1;
       color: white;
       border-radius: 10px;
       padding: 2px 8px;
@@ -238,33 +245,31 @@
       display: inline-block;
       margin-top: 4px;
     }
-    .empty-conversations {
-      padding: 2rem;
-      text-align: center;
-      color: var(--text-secondary);
-    }
+    .empty-conversations { padding: 2rem; text-align: center; color: #8a9bb5; }
 
     /* Chat Area */
     .chat-area {
       flex: 1;
       display: flex;
       flex-direction: column;
-      background: var(--bg);
+      background: #f9fbfe;
     }
+    body.dark-mode .chat-area { background: #1a1f2b; }
     .chat-header {
       padding: 0.8rem 1.5rem;
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--border);
+      background: #ffffff;
+      border-bottom: 1px solid #e7edf5;
       display: flex;
       align-items: center;
       gap: 0.8rem;
     }
+    body.dark-mode .chat-header { background: #141a26; border-bottom-color: #2a3442; }
     .back-btn {
       display: none;
       background: none;
       border: none;
       cursor: pointer;
-      color: var(--text-secondary);
+      color: #8a9bb5;
       font-size: 1.2rem;
     }
     .chat-messages {
@@ -286,16 +291,17 @@
     }
     .message-sent {
       align-self: flex-end;
-      background: var(--primary);
+      background: #2a7de1;
       color: white;
       border-bottom-right-radius: 4px;
     }
     .message-received {
       align-self: flex-start;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
+      background: #ffffff;
+      border: 1px solid #e7edf5;
       border-bottom-left-radius: 4px;
     }
+    body.dark-mode .message-received { background: #252d3d; border-color: #3b465b; }
     .message-time {
       font-size: 0.65rem;
       opacity: 0.8;
@@ -305,35 +311,33 @@
     }
     .chat-input {
       padding: 1rem;
-      background: var(--card-bg);
-      border-top: 1px solid var(--border);
+      background: #ffffff;
+      border-top: 1px solid #e7edf5;
       display: flex;
       gap: 0.8rem;
       align-items: center;
     }
+    body.dark-mode .chat-input { background: #141a26; border-top-color: #2a3442; }
     .chat-input input {
       flex: 1;
       padding: 0.7rem 1rem;
-      border: 1.5px solid var(--border);
+      border: 1.5px solid #dfe6f0;
       border-radius: 24px;
       font-size: 0.9rem;
-      background: var(--bg);
-      color: var(--text);
+      background: #f9fbfe;
+      color: #1a253a;
     }
-    .chat-input input:focus {
-      outline: none;
-      border-color: var(--primary);
-    }
+    body.dark-mode .chat-input input { background: #252d3d; border-color: #3b465b; color: #eef2f6; }
+    .chat-input input:focus { outline: none; border-color: #2a7de1; }
     .no-chat-selected {
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--text-secondary);
+      color: #8a9bb5;
       font-size: 1rem;
     }
 
-    /* Buttons */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -347,10 +351,10 @@
       font-size: 0.9rem;
       white-space: nowrap;
     }
-    .btn-primary { background: var(--primary); color: white; }
-    .btn-primary:hover { background: var(--primary-hover); }
-    .btn-secondary { background: var(--bg); color: var(--text); }
-    .btn-secondary:hover { background: var(--border); }
+    .btn-primary { background: #2a7de1; color: white; }
+    .btn-primary:hover { background: #1a67c4; }
+    .btn-secondary { background: #eef2f8; color: #1a253a; }
+    .btn-secondary:hover { background: #dfe6f0; }
 
     /* Modal */
     .modal-overlay {
@@ -361,122 +365,125 @@
       backdrop-filter: blur(4px);
       align-items: center;
       justify-content: center;
-      z-index: 1000;
+      z-index: 2000;
       padding: 1.5rem;
     }
     .modal-overlay.active { display: flex; }
     .modal {
-      background: var(--card-bg);
-      border-radius: 24px;
+      background: #ffffff;
+      border-radius: 28px;
       max-width: 420px;
       width: 100%;
       padding: 2rem;
       box-shadow: 0 30px 60px -20px rgba(0,0,0,0.3);
       position: relative;
     }
+    body.dark-mode .modal { background: #1a1f2b; }
     .modal h2 { margin-bottom: 1.2rem; font-weight: 700; }
-    .modal-close {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      cursor: pointer;
-      font-size: 1.2rem;
-    }
-    .modal-close:hover { color: var(--text); }
-    .form-group { margin-bottom: 1.2rem; }
-    .form-group label {
+    .modal .form-group { margin-bottom: 1.2rem; }
+    .modal .form-group label {
       display: block;
       font-weight: 600;
       font-size: 0.9rem;
       margin-bottom: 0.3rem;
     }
-    .form-group input {
+    .modal .form-group input {
       width: 100%;
       padding: 0.7rem 1rem;
-      border: 1.5px solid var(--border);
+      border: 1.5px solid #dfe6f0;
       border-radius: 14px;
       font-size: 0.95rem;
-      background: var(--bg);
-      color: var(--text);
+      background: #f9fbfe;
     }
-    .form-group input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(42,125,225,0.1);
-    }
-    .form-actions {
-      display: flex;
-      gap: 0.8rem;
-      margin-top: 1.5rem;
-      justify-content: flex-end;
-    }
-    .form-actions button {
+    body.dark-mode .modal .form-group input { background: #252d3d; border-color: #3b465b; color: #eef2f6; }
+    .modal .form-group input:focus { outline: none; border-color: #2a7de1; box-shadow: 0 0 0 4px rgba(42,125,225,0.1); }
+    .modal .form-actions { display: flex; gap: 0.8rem; margin-top: 1.5rem; justify-content: flex-end; }
+    .modal .form-actions button {
       padding: 0.6rem 1.8rem;
       border-radius: 40px;
       border: none;
       font-weight: 600;
       cursor: pointer;
     }
-    .form-actions .cancel { background: var(--bg); color: var(--text); }
-    .form-actions .submit { background: var(--primary); color: white; }
+    .modal .form-actions .cancel { background: #eef2f8; color: #1a253a; }
+    .modal .form-actions .submit { background: #2a7de1; color: white; }
 
-    .rtl { direction: rtl; }
-    .rtl .sidebar nav a { flex-direction: row-reverse; }
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 3000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .toast {
+      padding: 0.8rem 1.5rem;
+      border-radius: 14px;
+      background: white;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      animation: slideIn 0.3s ease;
+    }
+    body.dark-mode .toast { background: #2a3442; color: #eef2f6; }
+    .toast.success { border-left: 4px solid #10B981; }
+    .toast.error { border-left: 4px solid #EF4444; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
     @media (max-width: 768px) {
-      .sidebar { display: none; }
-      .main { padding: 0; }
-      .navbar { padding: 0.8rem 1rem; }
-      .conversations-panel {
-        width: 100%;
-        display: block;
-      }
-      .chat-area {
-        display: none;
-        width: 100%;
-      }
-      .chat-area.active {
-        display: flex;
-      }
-      .back-btn {
-        display: block;
-      }
+      .hamburger { display: block; }
+      .main { margin-left: 0; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.closed { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .conversations-panel { width: 100%; display: block; }
+      .chat-area { display: none; width: 100%; }
+      .chat-area.active { display: flex; }
+      .back-btn { display: block; }
     }
+    .rtl { direction: rtl; }
+    .rtl .sidebar nav a { flex-direction: row-reverse; }
   </style>
 </head>
 <body>
-  <!-- Sidebar -->
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <i class="fas fa-graduation-cap"></i>
       <span>Edu<small>Core</small></span>
     </div>
     <nav>
-      <a href="dashboard.html"><i class="fas fa-chart-pie"></i> <span data-key="dashboard">Dashboard</span></a>
-      <a href="courses.html"><i class="fas fa-book-open"></i> <span data-key="courses">Courses</span></a>
-      <a href="lessons.html"><i class="fas fa-file-alt"></i> <span data-key="lessons">Lessons</span></a>
-      <a href="live-classes.html"><i class="fas fa-video"></i> <span data-key="live">Live Classes</span></a>
-      <a href="students.html"><i class="fas fa-users"></i> <span data-key="students">Students</span></a>
-      <a href="assignments.html"><i class="fas fa-clipboard-list"></i> <span data-key="assignments">Assignments</span></a>
-      <a href="exams.html"><i class="fas fa-file-alt"></i> <span data-key="exams">Exams</span></a>
-      <a href="exam-results.html"><i class="fas fa-chart-bar"></i> <span data-key="results">Results</span></a>
-      <a href="notifications.html"><i class="fas fa-bell"></i> <span data-key="notifications">Notifications</span></a>
-      <a href="messages.html" class="active"><i class="fas fa-comments"></i> <span data-key="messages">Messages</span></a>
-      <a href="revenue.html"><i class="fas fa-dollar-sign"></i> <span data-key="revenue">Revenue</span></a>
-      <a href="settings.html"><i class="fas fa-cog"></i> <span data-key="settings">Settings</span></a>
+      <a href="dashboard.html"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      <a href="courses.html"><i class="fas fa-book-open"></i> Courses</a>
+      <a href="lessons.html"><i class="fas fa-file-alt"></i> Lessons</a>
+      <a href="lesson-upload.html"><i class="fas fa-upload"></i> Upload Lesson</a>
+      <a href="live-classes.html"><i class="fas fa-video"></i> Live Classes</a>
+      <a href="students.html"><i class="fas fa-users"></i> Students</a>
+      <a href="assignments.html"><i class="fas fa-clipboard-list"></i> Assignments</a>
+      <a href="exams.html"><i class="fas fa-file-alt"></i> Exams</a>
+      <a href="exam-results.html"><i class="fas fa-chart-bar"></i> Results</a>
+      <a href="notifications.html"><i class="fas fa-bell"></i> Notifications</a>
+      <a href="messages.html" class="active"><i class="fas fa-comments"></i> Messages</a>
+      <a href="revenue.html"><i class="fas fa-dollar-sign"></i> Revenue</a>
+      <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
     </nav>
     <div class="sidebar-footer" id="logoutBtn">
-      <i class="fas fa-sign-out-alt"></i> <span data-key="logout">Logout</span>
+      <i class="fas fa-sign-out-alt"></i> Logout
     </div>
   </aside>
 
-  <!-- Main -->
   <div class="main" id="mainContent">
     <header class="navbar">
-      <h1 id="pageTitle">💬 Messages</h1>
+      <div style="display:flex; align-items:center; gap:1rem;">
+        <button class="hamburger" id="hamburgerBtn"><i class="fas fa-bars"></i></button>
+        <h1>💬 Messages</h1>
+      </div>
       <div class="navbar-actions">
         <div class="lang-dark">
           <button id="langToggle"><i class="fas fa-globe"></i> <span id="langLabel">EN</span></button>
@@ -524,7 +531,7 @@
   <!-- New Chat Modal -->
   <div class="modal-overlay" id="newChatModal">
     <div class="modal">
-      <button class="modal-close" id="newChatModalClose"><i class="fas fa-times"></i></button>
+      <button class="modal-close" style="position:absolute; top:1rem; right:1rem; background:none; border:none; color:#8a9bb5; cursor:pointer;" id="newChatModalClose"><i class="fas fa-times"></i></button>
       <h2>New Conversation</h2>
       <div class="form-group">
         <label>Student Name</label>
@@ -541,17 +548,16 @@
     </div>
   </div>
 
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
   <script type="module">
-    import { auth, db } from './firebase.js';
-    import { showToast, showLoading, hideLoading } from './shared.js';
-    import { initOneSignal } from './onesignal.js';
+    // ========== FIREBASE ==========
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
     import {
-      onAuthStateChanged,
-      signOut
-    } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js';
-    import {
+      getFirestore,
       collection,
-      getDocs,
       addDoc,
       updateDoc,
       doc,
@@ -560,9 +566,23 @@
       onSnapshot,
       serverTimestamp,
       writeBatch
-    } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
+    } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-    // Auth protection
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOBJ22snwOow8xfQnL2WmCusmyS8iWWlk",
+      authDomain: "educore-c3b42.firebaseapp.com",
+      projectId: "educore-c3b42",
+      storageBucket: "educore-c3b42.firebasestorage.app",
+      messagingSenderId: "750509780814",
+      appId: "1:750509780814:web:f57bddff39c7668b3cf81f",
+      measurementId: "G-LF317C03Q0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // ========== AUTH ==========
     let currentUser = null;
     let TEACHER_ID = '';
     let TEACHER_NAME = '';
@@ -579,19 +599,44 @@
       }
     });
 
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-      if (confirm('Are you sure you want to logout?')) {
-        try {
-          await signOut(auth);
-          window.location.href = 'login.html';
-        } catch (error) {
-          showToast('Logout failed.', 'error');
+    // ========== MOBILE SIDEBAR ==========
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    document.getElementById('hamburgerBtn').addEventListener('click', () => {
+      sidebar.classList.add('open');
+      overlay.classList.add('show');
+    });
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+    });
+    document.querySelectorAll('.sidebar nav a').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('show');
         }
+      });
+    });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      if (confirm('Are you sure you want to logout?')) {
+        signOut(auth).then(() => window.location.href = 'login.html');
       }
     });
 
-    // State
+    // ========== TOAST ==========
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${msg}`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ========== MESSAGES ==========
     let allMessages = [];
     let conversationsMap = new Map();
     let unreadCounts = new Map();
@@ -600,17 +645,14 @@
 
     // Real-time listener
     function listenToMessages() {
-      showLoading();
       const q = query(collection(db, 'messages'), orderBy('timestamp', 'desc'));
       onSnapshot(q, (snapshot) => {
         allMessages = [];
         snapshot.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() }));
         buildConversations();
-        hideLoading();
       }, (error) => {
-        console.error('Error:', error);
-        hideLoading();
-        showToast('Failed to load messages.', 'error');
+        console.error(error);
+        showToast('Failed to load messages', 'error');
       });
     }
 
@@ -682,7 +724,6 @@
           </div>`;
       }).join('');
 
-      // Bind click events
       container.querySelectorAll('.conversation-item').forEach(item => {
         item.addEventListener('click', () => {
           selectConversation(item.dataset.chatid, item.dataset.studentname);
@@ -797,7 +838,6 @@
       }
     });
 
-    // Escape key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         document.getElementById('newChatModal').classList.remove('active');
@@ -806,80 +846,37 @@
 
     function escapeHtml(text) {
       if (!text) return '';
-      return String(text).replace(/[&<>"']/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        if (m === '"') return '&quot;';
-        if (m === "'") return '&#039;';
-        return m;
+      return String(text).replace(/[&<>"']/g, m => {
+        if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;';
+        if (m === '"') return '&quot;'; if (m === "'") return '&#039;'; return m;
       });
     }
 
-    // Language & Dark Mode
+    // ========== LANGUAGE & DARK MODE ==========
     let lang = 'en';
     const langToggle = document.getElementById('langToggle');
     const darkToggle = document.getElementById('darkToggle');
     const langLabel = document.getElementById('langLabel');
-
-    const translations = {
-      en: {
-        dashboard: 'Dashboard',
-        courses: 'Courses',
-        lessons: 'Lessons',
-        live: 'Live Classes',
-        students: 'Students',
-        assignments: 'Assignments',
-        exams: 'Exams',
-        results: 'Results',
-        notifications: 'Notifications',
-        messages: 'Messages',
-        revenue: 'Revenue',
-        settings: 'Settings',
-        logout: 'Logout',
-        pageTitle: '💬 Messages',
-        searchPlaceholder: 'Search conversations...',
-        newChatBtn: '<i class="fas fa-plus"></i> New Conversation',
-        messageInputPlaceholder: 'Type a message...'
-      },
-      ar: {
-        dashboard: 'لوحة التحكم',
-        courses: 'الدورات',
-        lessons: 'الدروس',
-        live: 'الحصص المباشرة',
-        students: 'الطلاب',
-        assignments: 'الواجبات',
-        exams: 'الامتحانات',
-        results: 'النتائج',
-        notifications: 'الإشعارات',
-        messages: 'الرسائل',
-        revenue: 'الإيرادات',
-        settings: 'الإعدادات',
-        logout: 'تسجيل الخروج',
-        pageTitle: '💬 الرسائل',
-        searchPlaceholder: 'بحث في المحادثات...',
-        newChatBtn: '<i class="fas fa-plus"></i> محادثة جديدة',
-        messageInputPlaceholder: 'اكتب رسالة...'
-      }
-    };
-
-    function applyLanguage(langCode) {
-      const t = translations[langCode];
-      document.querySelectorAll('[data-key]').forEach(el => {
-        const key = el.getAttribute('data-key');
-        if (t[key]) el.textContent = t[key];
-      });
-      document.getElementById('pageTitle').textContent = t.pageTitle;
-      document.getElementById('searchConversation').placeholder = t.searchPlaceholder;
-      document.getElementById('newChatBtn').innerHTML = t.newChatBtn;
-      document.getElementById('messageInput').placeholder = t.messageInputPlaceholder;
-      document.getElementById('mainContent').classList.toggle('rtl', langCode === 'ar');
-    }
+    const mainEl = document.getElementById('mainContent');
 
     langToggle.addEventListener('click', () => {
       lang = lang === 'en' ? 'ar' : 'en';
       langLabel.textContent = lang.toUpperCase();
-      applyLanguage(lang);
+      if (lang === 'ar') {
+        document.querySelector('.navbar h1').textContent = '💬 الرسائل';
+        document.getElementById('searchConversation').placeholder = 'بحث في المحادثات...';
+        document.getElementById('newChatBtn').innerHTML = '<i class="fas fa-plus"></i> محادثة جديدة';
+        document.getElementById('messageInput').placeholder = 'اكتب رسالة...';
+        document.getElementById('chatName').textContent = currentStudentName || 'اختر محادثة';
+        mainEl.classList.add('rtl');
+      } else {
+        document.querySelector('.navbar h1').textContent = '💬 Messages';
+        document.getElementById('searchConversation').placeholder = 'Search conversations...';
+        document.getElementById('newChatBtn').innerHTML = '<i class="fas fa-plus"></i> New Conversation';
+        document.getElementById('messageInput').placeholder = 'Type a message...';
+        document.getElementById('chatName').textContent = currentStudentName || 'Select a conversation';
+        mainEl.classList.remove('rtl');
+      }
     });
 
     darkToggle.addEventListener('click', () => {
@@ -888,9 +885,7 @@
       darkToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     });
 
-    // Init OneSignal
-    initOneSignal();
-    console.log('✅ Messages ready (production mode)');
+    console.log('✅ Messages ready.');
   </script>
 </body>
 </html>
