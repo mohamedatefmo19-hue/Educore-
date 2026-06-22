@@ -19,7 +19,6 @@
       min-height: 100vh;
     }
     body.dark-mode { background: #0b0e14; color: #eef2f6; }
-    /* Sidebar */
     .sidebar {
       width: 260px;
       background: #ffffff;
@@ -90,8 +89,6 @@
     }
     body.dark-mode .sidebar-footer { border-top-color: #2a3442; }
     .sidebar-footer:hover { color: #e74c3c; }
-
-    /* Overlay for mobile */
     .sidebar-overlay {
       display: none;
       position: fixed;
@@ -100,8 +97,6 @@
       z-index: 999;
     }
     .sidebar-overlay.show { display: block; }
-
-    /* Main */
     .main {
       flex: 1;
       margin-left: 260px;
@@ -111,7 +106,6 @@
       width: 100%;
     }
     .main.expanded { margin-left: 0; }
-
     .navbar {
       display: flex;
       justify-content: space-between;
@@ -151,7 +145,6 @@
       cursor: pointer;
     }
     body.dark-mode .hamburger { color: #b0c0d4; }
-
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -174,7 +167,6 @@
       letter-spacing: 0.3px;
     }
     .stat-card .value { font-size: 1.9rem; font-weight: 700; margin: 0.4rem 0 0.1rem; }
-
     .row-2col {
       display: grid;
       grid-template-columns: 2fr 1fr;
@@ -205,7 +197,6 @@
     .live-item i { color: #e67e22; }
     .empty-state { color: #8a9bb5; text-align: center; padding: 1.5rem 0; font-size: 0.9rem; }
     .live-item .time { margin-left: auto; font-size: 0.8rem; color: #6b7d9c; }
-
     .badge-notif {
       position: absolute;
       top: -6px;
@@ -217,7 +208,6 @@
       border-radius: 30px;
       font-weight: 700;
     }
-
     @media (max-width: 992px) { .row-2col { grid-template-columns: 1fr; } }
     @media (max-width: 768px) {
       .hamburger { display: block; }
@@ -225,9 +215,10 @@
       .sidebar { transform: translateX(-100%); }
       .sidebar.closed { transform: translateX(-100%); }
       .sidebar.open { transform: translateX(0); }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 480px) {
-      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .stats-grid { grid-template-columns: 1fr; }
       .navbar { flex-direction: column; align-items: stretch; }
     }
     .rtl { direction: rtl; }
@@ -236,11 +227,6 @@
   </style>
 </head>
 <body>
-
-  <!-- Sidebar Overlay (mobile) -->
-  <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-  <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <i class="fas fa-graduation-cap"></i>
@@ -259,7 +245,6 @@
     </div>
   </aside>
 
-  <!-- Main Content -->
   <div class="main" id="mainContent">
     <header class="navbar">
       <div style="display:flex; align-items:center; gap:1rem;">
@@ -308,7 +293,16 @@
     // ========== FIREBASE SETUP ==========
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      query,
+      where,
+      orderBy,
+      limit,
+      onSnapshot
+    } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCOBJ22snwOow8xfQnL2WmCusmyS8iWWlk",
@@ -325,10 +319,13 @@
     const db = getFirestore(app);
 
     // ========== AUTH PROTECTION ==========
+    let TEACHER_ID = '';
+
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = 'login.html';
       } else {
+        TEACHER_ID = user.uid;
         console.log('✅ Logged in as:', user.email);
         document.body.classList.add('auth-ready');
         loadDashboardData();
@@ -354,7 +351,6 @@
     hamburgerBtn.addEventListener('click', openSidebar);
     overlay.addEventListener('click', closeSidebar);
 
-    // Close sidebar when a navigation link is clicked (on mobile)
     document.querySelectorAll('.sidebar nav a').forEach(link => {
       link.addEventListener('click', () => {
         if (window.innerWidth <= 768) closeSidebar();
@@ -385,12 +381,13 @@
 
     async function loadDashboardData() {
       try {
+        // Fetch counts with teacherId filter
         const [studentsSnap, coursesSnap, lessonsSnap, liveSnap, revenueSnap] = await Promise.all([
-          getDocs(collection(db, 'students')),
-          getDocs(collection(db, 'courses')),
-          getDocs(collection(db, 'lessons')),
-          getDocs(collection(db, 'liveClasses')),
-          getDocs(collection(db, 'transactions'))
+          getDocs(query(collection(db, 'students'), where("teacherId", "==", TEACHER_ID))),
+          getDocs(query(collection(db, 'courses'), where("teacherId", "==", TEACHER_ID))),
+          getDocs(query(collection(db, 'lessons'), where("teacherId", "==", TEACHER_ID))),
+          getDocs(query(collection(db, 'liveClasses'), where("teacherId", "==", TEACHER_ID))),
+          getDocs(query(collection(db, 'transactions'), where("teacherId", "==", TEACHER_ID)))
         ]);
 
         totalStudentsEl.textContent = studentsSnap.size;
@@ -411,8 +408,13 @@
         });
         revenueEl.textContent = formatCurrency(totalRevenue);
 
-        // Recent activities
-        const activitiesQuery = query(collection(db, 'activities'), orderBy('timestamp', 'desc'), limit(5));
+        // Recent activities (filtered by teacherId)
+        const activitiesQuery = query(
+          collection(db, 'activities'),
+          where("teacherId", "==", TEACHER_ID),
+          orderBy('timestamp', 'desc'),
+          limit(5)
+        );
         const activitiesSnap = await getDocs(activitiesQuery);
         if (activitiesSnap.empty) {
           recentDiv.innerHTML = '<div class="empty-state">No recent activities</div>';
@@ -427,8 +429,12 @@
           recentDiv.innerHTML = html;
         }
 
-        // Upcoming live sessions
-        const liveQuery = query(collection(db, 'liveClasses'), orderBy('startTime', 'asc'));
+        // Upcoming live sessions (filtered)
+        const liveQuery = query(
+          collection(db, 'liveClasses'),
+          where("teacherId", "==", TEACHER_ID),
+          orderBy('startTime', 'asc')
+        );
         const liveSnap2 = await getDocs(liveQuery);
         let hasLive = false;
         let liveHtml = '';
@@ -443,12 +449,12 @@
         });
         upcomingDiv.innerHTML = hasLive ? liveHtml : '<div class="empty-state">No upcoming live sessions</div>';
 
-        // Chart
+        // Chart data (analytics collection filtered)
         const chartData = await fetchChartData();
         renderChart(chartData);
 
-        // Notifications badge
-        const notifSnap = await getDocs(collection(db, 'notifications'));
+        // Notifications badge (filtered)
+        const notifSnap = await getDocs(query(collection(db, 'notifications'), where("teacherId", "==", TEACHER_ID)));
         let unread = 0;
         notifSnap.forEach(doc => {
           if (doc.data().read === false) unread++;
@@ -458,13 +464,13 @@
 
       } catch (error) {
         console.error('Dashboard error:', error);
-        alert('Failed to load dashboard data.');
+        alert('Failed to load dashboard data. Make sure you have created composite indexes for the filtered queries.');
       }
     }
 
     async function fetchChartData() {
       try {
-        const analyticsSnap = await getDocs(collection(db, 'analytics'));
+        const analyticsSnap = await getDocs(query(collection(db, 'analytics'), where("teacherId", "==", TEACHER_ID)));
         const dataMap = {};
         analyticsSnap.forEach(doc => {
           const d = doc.data();
@@ -506,18 +512,22 @@
     }
 
     function listenToUpdates() {
-      onSnapshot(collection(db, 'students'), (snap) => { totalStudentsEl.textContent = snap.size; });
-      onSnapshot(collection(db, 'courses'), (snap) => { totalCoursesEl.textContent = snap.size; });
-      onSnapshot(collection(db, 'liveClasses'), (snap) => {
+      onSnapshot(query(collection(db, 'students'), where("teacherId", "==", TEACHER_ID)), (snap) => {
+        totalStudentsEl.textContent = snap.size;
+      });
+      onSnapshot(query(collection(db, 'courses'), where("teacherId", "==", TEACHER_ID)), (snap) => {
+        totalCoursesEl.textContent = snap.size;
+      });
+      onSnapshot(query(collection(db, 'liveClasses'), where("teacherId", "==", TEACHER_ID)), (snap) => {
         let live = 0;
         snap.forEach(doc => {
           const data = doc.data();
           if (data.status === 'upcoming' || data.status === 'live') live++;
         });
         liveClassesEl.textContent = live;
-        loadDashboardData(); // refresh list
+        loadDashboardData(); // refresh upcoming list
       });
-      onSnapshot(collection(db, 'transactions'), (snap) => {
+      onSnapshot(query(collection(db, 'transactions'), where("teacherId", "==", TEACHER_ID)), (snap) => {
         let total = 0;
         snap.forEach(doc => { if (doc.data().amount) total += Number(doc.data().amount); });
         revenueEl.textContent = formatCurrency(total);
@@ -570,10 +580,10 @@
 
     document.getElementById('notifBtn').addEventListener('click', () => {
       notifBadge.style.display = 'none';
-      alert('📬 Notifications: You have 3 unread messages.');
+      alert('📬 Notifications: You have ' + notifBadge.textContent + ' unread messages.');
     });
 
-    console.log('✅ EduCore Dashboard ready (self‑contained).');
+    console.log('✅ EduCore Dashboard ready (teacher-scoped).');
   </script>
 </body>
 </html>
