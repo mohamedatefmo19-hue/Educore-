@@ -335,7 +335,6 @@
     let TEACHER_ID = '';
     let chart = null;
 
-    // ---------- AUTH ----------
     onAuthStateChanged(auth, (user) => {
       if (!user) {
         window.location.href = 'login.html';
@@ -348,7 +347,6 @@
       }
     });
 
-    // ---------- SIDEBAR MOBILE ----------
     hamburgerBtn?.addEventListener('click', () => {
       sidebar.classList.add('open');
       overlay.classList.add('show');
@@ -366,7 +364,6 @@
       });
     });
 
-    // ---------- LOGOUT ----------
     document.getElementById('logoutBtn')?.addEventListener('click', () => {
       if (confirm('Are you sure you want to logout?')) {
         signOut(auth).then(() => window.location.href = 'login.html');
@@ -377,7 +374,6 @@
       return '$' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 0 });
     }
 
-    // ---------- إضافة teacherId للمستندات التي تفتقده ----------
     async function ensureTeacherId(collectionName, docs) {
       const updates = [];
       docs.forEach(d => {
@@ -407,7 +403,6 @@
         const lives = liveSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         const revenues = revenueSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-        // أضف teacherId فورًا لكل ما ينقصه
         await Promise.all([
           ensureTeacherId('students', students),
           ensureTeacherId('courses', courses),
@@ -430,7 +425,6 @@
         revenues.forEach(r => { if (r.amount) totalRevenue += Number(r.amount); });
         revenueEl.textContent = formatCurrency(totalRevenue);
 
-        // الأنشطة الأخيرة
         const activitiesSnap = await getDocs(collection(db, 'activities'));
         const activities = activitiesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         await ensureTeacherId('activities', activities);
@@ -444,7 +438,6 @@
               return `<div class="activity-item"><i class="fas ${icon}"></i> ${text}</div>`;
             }).join('');
 
-        // الحصص القادمة (استخدمنا lives أعلاه)
         const upcoming = lives.filter(l => l.status === 'upcoming' || l.status === 'live');
         upcoming.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
         upcomingDiv.innerHTML = upcoming.length === 0
@@ -455,7 +448,6 @@
               return `<div class="live-item"><i class="fas fa-video"></i> ${title} <span class="time">${time}</span></div>`;
             }).join('');
 
-        // الرسم البياني
         const analyticsSnap = await getDocs(collection(db, 'analytics'));
         const analyticsDocs = analyticsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         await ensureTeacherId('analytics', analyticsDocs);
@@ -465,7 +457,6 @@
         const values = weeks.map(w => dataMap[w] !== undefined ? dataMap[w] : Math.floor(Math.random() * 40 + 20));
         renderChart({ labels: weeks, values });
 
-        // الإشعارات
         const notifSnap = await getDocs(collection(db, 'notifications'));
         const notifs = notifSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         await ensureTeacherId('notifications', notifs);
@@ -525,7 +516,7 @@
         let live = 0;
         docs.forEach(d => { if (d.status === 'upcoming' || d.status === 'live') live++; });
         liveClassesEl.textContent = live;
-        loadDashboardData(); // تحديث القائمة القادمة
+        loadDashboardData();
       });
       onSnapshot(collection(db, 'transactions'), (snap) => {
         const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -536,7 +527,6 @@
       });
     }
 
-    // ---------- LANGUAGE & DARK MODE ----------
     let lang = 'en';
     const langToggle = document.getElementById('langToggle');
     const darkToggle = document.getElementById('darkToggle');
@@ -585,7 +575,7 @@
       alert('📬 Notifications: You have ' + notifBadge.textContent + ' unread messages.');
     });
 
-    console.log('✅ Dashboard script loaded – auto‑adds teacherId.');
+    console.log('✅ Dashboard ready – adds teacherId automatically.');
   </script>
 </body>
 </html>
