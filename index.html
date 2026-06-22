@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
   <title>EduCore · Teacher Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
@@ -17,6 +19,7 @@
       justify-content: center;
       padding: 1.5rem;
     }
+    body.dark-mode { background: #0b0e14; color: #eef2f6; }
     .login-card {
       background: #ffffff;
       max-width: 440px;
@@ -25,12 +28,8 @@
       border-radius: 2rem;
       box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
     }
-    .logo-area {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 2rem;
-    }
+    body.dark-mode .login-card { background: #1a1f2b; }
+    .logo-area { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem; }
     .logo-icon {
       font-size: 2rem;
       color: #2a7de1;
@@ -42,27 +41,15 @@
       justify-content: center;
       border-radius: 16px;
     }
-    .logo-text {
-      font-weight: 700;
-      font-size: 1.6rem;
-      letter-spacing: -0.5px;
-      color: #0b1e33;
-    }
+    body.dark-mode .logo-icon { background: #2a3a5a; color: #6b9ef0; }
+    .logo-text { font-weight: 700; font-size: 1.6rem; letter-spacing: -0.5px; color: #0b1e33; }
+    body.dark-mode .logo-text { color: #eef2f6; }
     .logo-text span { color: #2a7de1; }
-    .subhead {
-      font-size: 0.9rem;
-      color: #5e6f8d;
-      margin-top: 0.2rem;
-      font-weight: 500;
-    }
+    .subhead { font-size: 0.9rem; color: #5e6f8d; margin-top: 0.2rem; font-weight: 500; }
+    body.dark-mode .subhead { color: #9aabbf; }
     .form-group { margin-bottom: 1.4rem; position: relative; }
-    .form-group label {
-      display: block;
-      font-weight: 600;
-      font-size: 0.9rem;
-      margin-bottom: 0.4rem;
-      color: #1f2a41;
-    }
+    .form-group label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.4rem; color: #1f2a41; }
+    body.dark-mode .form-group label { color: #d0dae8; }
     .input-wrapper { position: relative; }
     .input-wrapper i {
       position: absolute;
@@ -79,15 +66,11 @@
       border-radius: 14px;
       font-size: 1rem;
       background: #f9fbfe;
-      transition: 0.15s;
-      font-weight: 500;
       color: #1a253a;
+      transition: 0.15s;
     }
-    .input-wrapper input:focus {
-      outline: none;
-      border-color: #2a7de1;
-      box-shadow: 0 0 0 4px rgba(42,125,225,0.15);
-    }
+    body.dark-mode .input-wrapper input { background: #252d3d; border-color: #3b465b; color: #eef2f6; }
+    .input-wrapper input:focus { outline: none; border-color: #2a7de1; box-shadow: 0 0 0 4px rgba(42,125,225,0.15); }
     .input-wrapper .toggle-pwd {
       position: absolute;
       right: 1rem;
@@ -96,9 +79,8 @@
       background: none;
       border: none;
       color: #8a9bb5;
-      font-size: 1rem;
       cursor: pointer;
-      padding: 0.3rem;
+      font-size: 1rem;
     }
     .form-options {
       display: flex;
@@ -108,23 +90,10 @@
       flex-wrap: wrap;
       gap: 0.5rem;
     }
-    .remember-me {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.9rem;
-      color: #2f3b57;
-    }
+    .remember-me { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: #2f3b57; }
+    body.dark-mode .remember-me { color: #b0c0d4; }
     .remember-me input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2a7de1; }
-    .forgot-link {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: #2a7de1;
-      text-decoration: none;
-      background: none;
-      border: none;
-      cursor: pointer;
-    }
+    .forgot-link { font-size: 0.9rem; font-weight: 600; color: #2a7de1; background: none; border: none; cursor: pointer; }
     .btn-login {
       width: 100%;
       padding: 0.9rem;
@@ -142,6 +111,7 @@
       transition: 0.15s;
       box-shadow: 0 8px 20px -6px rgba(42,125,225,0.3);
     }
+    .btn-login:hover { background: #1a67c4; }
     .btn-login:disabled { opacity: 0.7; cursor: not-allowed; }
     .spinner {
       display: inline-block;
@@ -165,6 +135,8 @@
     }
     .message-box.error { display: flex; background: #fde8e8; color: #b3403a; border-left: 5px solid #b3403a; }
     .message-box.success { display: flex; background: #e3f5e9; color: #1f7840; border-left: 5px solid #1f7840; }
+    body.dark-mode .message-box.error { background: #3a2626; color: #f5b1b1; }
+    body.dark-mode .message-box.success { background: #1e3a2a; color: #8bddb0; }
     .footer-lang {
       display: flex;
       justify-content: space-between;
@@ -175,6 +147,7 @@
       border-top: 1px solid #e7edf5;
       padding-top: 1.5rem;
     }
+    body.dark-mode .footer-lang { border-top-color: #2f3b4f; color: #9aabbf; }
     @media (max-width: 480px) { .login-card { padding: 1.8rem 1.2rem; } }
   </style>
 </head>
@@ -184,7 +157,7 @@
       <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
       <div>
         <div class="logo-text">Edu<span>Core</span></div>
-        <div class="subhead">Teacher Portal</div>
+        <div class="subhead" id="subhead">Teacher Portal</div>
       </div>
     </div>
 
@@ -222,11 +195,20 @@
       <i id="msgIcon" class="fas fa-info-circle"></i>
       <span id="msgText"></span>
     </div>
+
+    <div class="footer-lang">
+      <div>
+        <button class="forgot-link" id="langToggle"><i class="fas fa-globe"></i> <span id="langLabel">English</span></button>
+      </div>
+      <button class="forgot-link" id="darkToggle" style="color:#6b7d9c;"><i class="fas fa-moon"></i> <span id="darkLabel">Dark</span></button>
+    </div>
   </div>
 
   <script type="module">
-    import { auth } from './firebase.js';
+    // ========== FIREBASE CONFIG ==========
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
     import {
+      getAuth,
       signInWithEmailAndPassword,
       sendPasswordResetEmail,
       setPersistence,
@@ -235,6 +217,20 @@
       onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOBJ22snwOow8xfQnL2WmCusmyS8iWWlk",
+      authDomain: "educore-c3b42.firebaseapp.com",
+      projectId: "educore-c3b42",
+      storageBucket: "educore-c3b42.firebasestorage.app",
+      messagingSenderId: "750509780814",
+      appId: "1:750509780814:web:f57bddff39c7668b3cf81f",
+      measurementId: "G-LF317C03Q0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // DOM elements
     const emailInput = document.getElementById('emailInput');
     const passwordInput = document.getElementById('passwordInput');
     const loginForm = document.getElementById('loginForm');
@@ -247,50 +243,114 @@
     const rememberMe = document.getElementById('rememberMe');
     const forgotBtn = document.getElementById('forgotPasswordBtn');
     const togglePwd = document.getElementById('togglePwd');
+    const langToggle = document.getElementById('langToggle');
+    const darkToggle = document.getElementById('darkToggle');
+    const subhead = document.getElementById('subhead');
+    const langLabel = document.getElementById('langLabel');
+    const darkLabel = document.getElementById('darkLabel');
 
+    // Helpers
     function showMessage(text, type = 'error') {
       messageBox.className = `message-box ${type}`;
       msgText.textContent = text;
       msgIcon.className = type === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
       messageBox.style.display = 'flex';
     }
-    function hideMessage() { messageBox.style.display = 'none'; }
+    function hideMessage() {
+      messageBox.style.display = 'none';
+      messageBox.className = 'message-box';
+    }
     function setLoading(isLoading) {
       loginBtn.disabled = isLoading;
       btnText.style.display = isLoading ? 'none' : 'inline';
       btnSpinner.style.display = isLoading ? 'inline' : 'none';
     }
-    function validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
+    function validateEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
 
+    // Language
+    let currentLang = 'en';
+    function setLanguage(lang) {
+      currentLang = lang;
+      if (lang === 'ar') {
+        document.documentElement.lang = 'ar';
+        langLabel.textContent = 'العربية';
+        subhead.textContent = 'بوابة المعلم';
+        emailInput.placeholder = 'البريد الإلكتروني';
+        passwordInput.placeholder = '••••••••';
+        document.querySelector('label[for="emailInput"]').innerHTML = '<i class="fas fa-envelope" style="margin-left:6px;"></i> البريد الإلكتروني';
+        document.querySelector('label[for="passwordInput"]').innerHTML = '<i class="fas fa-lock" style="margin-left:6px;"></i> كلمة المرور';
+        document.querySelector('.remember-me span').textContent = 'تذكرني';
+        forgotBtn.innerHTML = '<i class="fas fa-key"></i> نسيت كلمة المرور؟';
+        btnText.textContent = 'تسجيل الدخول';
+      } else {
+        document.documentElement.lang = 'en';
+        langLabel.textContent = 'English';
+        subhead.textContent = 'Teacher Portal';
+        emailInput.placeholder = 'teacher@educore.com';
+        passwordInput.placeholder = '••••••••';
+        document.querySelector('label[for="emailInput"]').innerHTML = '<i class="fas fa-envelope" style="margin-right:6px;"></i> Email';
+        document.querySelector('label[for="passwordInput"]').innerHTML = '<i class="fas fa-lock" style="margin-right:6px;"></i> Password';
+        document.querySelector('.remember-me span').textContent = 'Remember me';
+        forgotBtn.innerHTML = '<i class="fas fa-key"></i> Forgot password?';
+        btnText.textContent = 'Sign in';
+      }
+    }
+
+    // Dark mode
+    let isDark = false;
+    function toggleDark() {
+      isDark = !isDark;
+      document.body.classList.toggle('dark-mode', isDark);
+      darkLabel.textContent = isDark ? 'Light' : 'Dark';
+      darkToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i> ' : '<i class="fas fa-moon"></i> ';
+      darkToggle.innerHTML += darkLabel.textContent;
+    }
+
+    // Login handler
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       hideMessage();
       const email = emailInput.value.trim();
       const password = passwordInput.value;
 
-      if (!validateEmail(email)) { showMessage('Please enter a valid email.', 'error'); return; }
-      if (password.length < 6) { showMessage('Password must be at least 6 characters.', 'error'); return; }
+      if (!validateEmail(email)) {
+        showMessage('Please enter a valid email address.', 'error');
+        return;
+      }
+      if (password.length < 6) {
+        showMessage('Password must be at least 6 characters.', 'error');
+        return;
+      }
 
       setLoading(true);
       try {
         await setPersistence(auth, rememberMe.checked ? browserLocalPersistence : browserSessionPersistence);
         const userCred = await signInWithEmailAndPassword(auth, email, password);
         setLoading(false);
-        showMessage('✅ Login successful! Redirecting…', 'success');
-        setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
+        showMessage('✅ Login successful! Redirecting to dashboard...', 'success');
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 1500);
       } catch (error) {
         setLoading(false);
         let msg = 'Login failed. Please check your credentials.';
         if (error.code === 'auth/user-not-found') msg = 'No user found with this email.';
         else if (error.code === 'auth/wrong-password') msg = 'Incorrect password.';
-        else if (error.code === 'auth/too-many-requests') msg = 'Too many attempts. Try later.';
+        else if (error.code === 'auth/invalid-email') msg = 'Invalid email format.';
+        else if (error.code === 'auth/too-many-requests') msg = 'Too many attempts. Try again later.';
         showMessage(msg, 'error');
       }
     });
 
+    // Forgot password
     forgotBtn.addEventListener('click', async () => {
       const email = emailInput.value.trim();
-      if (!validateEmail(email)) { showMessage('Please enter your email first.', 'error'); return; }
+      if (!validateEmail(email)) {
+        showMessage('Please enter your email address first.', 'error');
+        return;
+      }
       setLoading(true);
       try {
         await sendPasswordResetEmail(auth, email);
@@ -298,23 +358,37 @@
         showMessage('✅ Password reset email sent!', 'success');
       } catch (error) {
         setLoading(false);
-        showMessage(error.code === 'auth/user-not-found' ? 'No user found with this email.' : 'Unable to send reset email.', 'error');
+        let msg = 'Unable to send reset email.';
+        if (error.code === 'auth/user-not-found') msg = 'No user found with this email.';
+        showMessage(msg, 'error');
       }
     });
 
+    // Toggle password visibility
     togglePwd.addEventListener('click', () => {
       const type = passwordInput.type === 'password' ? 'text' : 'password';
       passwordInput.type = type;
       togglePwd.querySelector('i').className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
     });
 
+    // Language toggle
+    langToggle.addEventListener('click', () => {
+      setLanguage(currentLang === 'en' ? 'ar' : 'en');
+    });
+
+    // Dark mode toggle
+    darkToggle.addEventListener('click', toggleDark);
+
     // Redirect if already logged in
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        console.log('Already logged in, redirecting to dashboard...');
+        console.log('User already logged in, redirecting...');
         window.location.href = 'dashboard.html';
       }
     });
+
+    // Initial language
+    setLanguage('en');
   </script>
 </body>
 </html>
