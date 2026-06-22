@@ -622,7 +622,7 @@
 
     // ========== CLOUDINARY WIDGET ==========
     const cloudName = "deaevfmvm";
-    const uploadPreset = "582f2d8b-44e8-4cca-8442-fc912e428b51";
+    const uploadPreset = "ml_default"; // <-- تم التغيير هنا
     let selectedThumbnailUrl = null;
 
     function openCloudinaryWidget() {
@@ -636,7 +636,7 @@
         sources: ['local', 'url', 'camera'],
         multiple: false,
         clientAllowedFormats: ['png', 'jpg', 'jpeg', 'gif'],
-        maxFileSize: 5000000 // 5MB
+        maxFileSize: 5000000
       }, (error, result) => {
         if (!error && result && result.event === "success") {
           selectedThumbnailUrl = result.info.secure_url;
