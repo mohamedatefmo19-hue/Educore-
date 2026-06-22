@@ -19,7 +19,6 @@
       min-height: 100vh;
     }
     body.dark-mode { background: #0b0e14; color: #eef2f6; }
-    /* Sidebar */
     .sidebar {
       width: 260px;
       background: #ffffff;
@@ -90,8 +89,6 @@
     }
     body.dark-mode .sidebar-footer { border-top-color: #2a3442; }
     .sidebar-footer:hover { color: #e74c3c; }
-
-    /* Overlay for mobile */
     .sidebar-overlay {
       display: none;
       position: fixed;
@@ -100,8 +97,6 @@
       z-index: 999;
     }
     .sidebar-overlay.show { display: block; }
-
-    /* Main */
     .main {
       flex: 1;
       margin-left: 260px;
@@ -111,7 +106,6 @@
       width: 100%;
     }
     .main.expanded { margin-left: 0; }
-
     .navbar {
       display: flex;
       justify-content: space-between;
@@ -151,7 +145,6 @@
       cursor: pointer;
     }
     body.dark-mode .hamburger { color: #b0c0d4; }
-
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -174,7 +167,6 @@
       letter-spacing: 0.3px;
     }
     .stat-card .value { font-size: 1.9rem; font-weight: 700; margin: 0.4rem 0 0.1rem; }
-
     .row-2col {
       display: grid;
       grid-template-columns: 2fr 1fr;
@@ -205,7 +197,6 @@
     .live-item i { color: #e67e22; }
     .empty-state { color: #8a9bb5; text-align: center; padding: 1.5rem 0; font-size: 0.9rem; }
     .live-item .time { margin-left: auto; font-size: 0.8rem; color: #6b7d9c; }
-
     .badge-notif {
       position: absolute;
       top: -6px;
@@ -217,7 +208,6 @@
       border-radius: 30px;
       font-weight: 700;
     }
-
     @media (max-width: 992px) { .row-2col { grid-template-columns: 1fr; } }
     @media (max-width: 768px) {
       .hamburger { display: block; }
@@ -225,9 +215,10 @@
       .sidebar { transform: translateX(-100%); }
       .sidebar.closed { transform: translateX(-100%); }
       .sidebar.open { transform: translateX(0); }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 480px) {
-      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .stats-grid { grid-template-columns: 1fr; }
       .navbar { flex-direction: column; align-items: stretch; }
     }
     .rtl { direction: rtl; }
@@ -236,11 +227,6 @@
   </style>
 </head>
 <body>
-
-  <!-- Sidebar Overlay (mobile) -->
-  <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-  <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <i class="fas fa-graduation-cap"></i>
@@ -259,7 +245,6 @@
     </div>
   </aside>
 
-  <!-- Main Content -->
   <div class="main" id="mainContent">
     <header class="navbar">
       <div style="display:flex; align-items:center; gap:1rem;">
@@ -308,7 +293,12 @@
     // ========== FIREBASE SETUP ==========
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      onSnapshot
+    } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCOBJ22snwOow8xfQnL2WmCusmyS8iWWlk",
@@ -324,51 +314,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // ========== AUTH PROTECTION ==========
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = 'login.html';
-      } else {
-        console.log('✅ Logged in as:', user.email);
-        document.body.classList.add('auth-ready');
-        loadDashboardData();
-        listenToUpdates();
-      }
-    });
-
-    // ========== MOBILE SIDEBAR TOGGLE ==========
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    const hamburgerBtn = document.getElementById('hamburgerBtn');
-    const mainContent = document.getElementById('mainContent');
-
-    function openSidebar() {
-      sidebar.classList.add('open');
-      overlay.classList.add('show');
-    }
-    function closeSidebar() {
-      sidebar.classList.remove('open');
-      overlay.classList.remove('show');
-    }
-
-    hamburgerBtn.addEventListener('click', openSidebar);
-    overlay.addEventListener('click', closeSidebar);
-
-    // Close sidebar when a navigation link is clicked (on mobile)
-    document.querySelectorAll('.sidebar nav a').forEach(link => {
-      link.addEventListener('click', () => {
-        if (window.innerWidth <= 768) closeSidebar();
-      });
-    });
-
-    // ========== LOGOUT ==========
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      if (confirm('Are you sure you want to logout?')) {
-        signOut(auth).then(() => window.location.href = 'login.html');
-      }
-    });
-
-    // ========== DASHBOARD DATA ==========
+    // عناصر DOM
     const totalStudentsEl = document.getElementById('totalStudents');
     const totalCoursesEl = document.getElementById('totalCourses');
     const totalLessonsEl = document.getElementById('totalLessons');
@@ -377,7 +323,55 @@
     const recentDiv = document.getElementById('recentActivities');
     const upcomingDiv = document.getElementById('upcomingLives');
     const notifBadge = document.getElementById('notifBadge');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+
+    if (!totalStudentsEl || !totalCoursesEl || !totalLessonsEl || !liveClassesEl || !revenueEl) {
+      alert('خطأ: لم يتم العثور على بعض عناصر الصفحة. يرجى إعادة رفع الملف.');
+      throw new Error('Missing DOM elements');
+    }
+
+    let TEACHER_ID = '';
     let chart = null;
+
+    // ========== AUTH ==========
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        TEACHER_ID = user.uid;
+        console.log('✅ Logged in as:', user.email);
+        document.body.classList.add('auth-ready');
+        loadDashboardData().catch(e => alert('Dashboard load error: ' + e.message));
+        listenToUpdates();
+      }
+    });
+
+    // ========== MOBILE SIDEBAR ==========
+    hamburgerBtn?.addEventListener('click', () => {
+      sidebar.classList.add('open');
+      overlay.classList.add('show');
+    });
+    overlay?.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+    });
+    document.querySelectorAll('.sidebar nav a').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('show');
+        }
+      });
+    });
+
+    // ========== LOGOUT ==========
+    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+      if (confirm('Are you sure you want to logout?')) {
+        signOut(auth).then(() => window.location.href = 'login.html');
+      }
+    });
 
     function formatCurrency(amount) {
       return '$' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 0 });
@@ -385,6 +379,7 @@
 
     async function loadDashboardData() {
       try {
+        // جلب جميع المستندات بدون where ولا orderBy – القواعد ستتولى الفلترة
         const [studentsSnap, coursesSnap, lessonsSnap, liveSnap, revenueSnap] = await Promise.all([
           getDocs(collection(db, 'students')),
           getDocs(collection(db, 'courses')),
@@ -411,43 +406,51 @@
         });
         revenueEl.textContent = formatCurrency(totalRevenue);
 
-        // Recent activities
-        const activitiesQuery = query(collection(db, 'activities'), orderBy('timestamp', 'desc'), limit(5));
-        const activitiesSnap = await getDocs(activitiesQuery);
-        if (activitiesSnap.empty) {
+        // الأنشطة الأخيرة
+        const activitiesSnap = await getDocs(collection(db, 'activities'));
+        const activities = [];
+        activitiesSnap.forEach(doc => activities.push({ id: doc.id, ...doc.data() }));
+        activities.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+        const recent = activities.slice(0, 5);
+        if (recent.length === 0) {
           recentDiv.innerHTML = '<div class="empty-state">No recent activities</div>';
         } else {
           let html = '';
-          activitiesSnap.forEach(doc => {
-            const data = doc.data();
-            const text = data.text || 'Activity';
-            const icon = data.icon || 'fa-circle';
+          recent.forEach(item => {
+            const text = item.text || 'Activity';
+            const icon = item.icon || 'fa-circle';
             html += `<div class="activity-item"><i class="fas ${icon}"></i> ${text}</div>`;
           });
           recentDiv.innerHTML = html;
         }
 
-        // Upcoming live sessions
-        const liveQuery = query(collection(db, 'liveClasses'), orderBy('startTime', 'asc'));
-        const liveSnap2 = await getDocs(liveQuery);
-        let hasLive = false;
-        let liveHtml = '';
+        // الحصص المباشرة القادمة
+        const liveSnap2 = await getDocs(collection(db, 'liveClasses'));
+        const lives = [];
         liveSnap2.forEach(doc => {
           const data = doc.data();
           if (data.status === 'upcoming' || data.status === 'live') {
-            hasLive = true;
-            const title = data.title || 'Live Session';
-            const time = data.startTime ? new Date(data.startTime.seconds * 1000).toLocaleString() : 'TBD';
-            liveHtml += `<div class="live-item"><i class="fas fa-video"></i> ${title} <span class="time">${time}</span></div>`;
+            lives.push({ id: doc.id, ...data });
           }
         });
-        upcomingDiv.innerHTML = hasLive ? liveHtml : '<div class="empty-state">No upcoming live sessions</div>';
+        lives.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
+        if (lives.length === 0) {
+          upcomingDiv.innerHTML = '<div class="empty-state">No upcoming live sessions</div>';
+        } else {
+          let liveHtml = '';
+          lives.forEach(l => {
+            const title = l.title || 'Live Session';
+            const time = l.startTime ? new Date(l.startTime.seconds * 1000).toLocaleString() : 'TBD';
+            liveHtml += `<div class="live-item"><i class="fas fa-video"></i> ${title} <span class="time">${time}</span></div>`;
+          });
+          upcomingDiv.innerHTML = liveHtml;
+        }
 
-        // Chart
+        // الرسم البياني
         const chartData = await fetchChartData();
         renderChart(chartData);
 
-        // Notifications badge
+        // الإشعارات
         const notifSnap = await getDocs(collection(db, 'notifications'));
         let unread = 0;
         notifSnap.forEach(doc => {
@@ -455,10 +458,9 @@
         });
         notifBadge.textContent = unread > 0 ? unread : '0';
         notifBadge.style.display = unread > 0 ? 'inline' : 'none';
-
       } catch (error) {
         console.error('Dashboard error:', error);
-        alert('Failed to load dashboard data.');
+        alert('Failed to load dashboard data: ' + error.message);
       }
     }
 
@@ -479,7 +481,8 @@
     }
 
     function renderChart(data) {
-      const ctx = document.getElementById('analyticsChart').getContext('2d');
+      const ctx = document.getElementById('analyticsChart')?.getContext('2d');
+      if (!ctx) return;
       if (chart) chart.destroy();
       chart = new Chart(ctx, {
         type: 'line',
@@ -506,8 +509,13 @@
     }
 
     function listenToUpdates() {
-      onSnapshot(collection(db, 'students'), (snap) => { totalStudentsEl.textContent = snap.size; });
-      onSnapshot(collection(db, 'courses'), (snap) => { totalCoursesEl.textContent = snap.size; });
+      // مستمعات الوقت الحقيقي – لا where ولا orderBy
+      onSnapshot(collection(db, 'students'), (snap) => {
+        totalStudentsEl.textContent = snap.size;
+      });
+      onSnapshot(collection(db, 'courses'), (snap) => {
+        totalCoursesEl.textContent = snap.size;
+      });
       onSnapshot(collection(db, 'liveClasses'), (snap) => {
         let live = 0;
         snap.forEach(doc => {
@@ -515,7 +523,7 @@
           if (data.status === 'upcoming' || data.status === 'live') live++;
         });
         liveClassesEl.textContent = live;
-        loadDashboardData(); // refresh list
+        loadDashboardData(); // تحديث القائمة القادمة
       });
       onSnapshot(collection(db, 'transactions'), (snap) => {
         let total = 0;
@@ -556,24 +564,24 @@
       mainEl.classList.toggle('rtl', langCode === 'ar');
     }
 
-    langToggle.addEventListener('click', () => {
+    langToggle?.addEventListener('click', () => {
       lang = lang === 'en' ? 'ar' : 'en';
       langLabel.textContent = lang.toUpperCase();
       applyLanguage(lang);
     });
 
-    darkToggle.addEventListener('click', () => {
+    darkToggle?.addEventListener('click', () => {
       document.body.classList.toggle('dark-mode');
       const isDark = document.body.classList.contains('dark-mode');
       darkToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     });
 
-    document.getElementById('notifBtn').addEventListener('click', () => {
+    document.getElementById('notifBtn')?.addEventListener('click', () => {
       notifBadge.style.display = 'none';
-      alert('📬 Notifications: You have 3 unread messages.');
+      alert('📬 Notifications: You have ' + notifBadge.textContent + ' unread messages.');
     });
 
-    console.log('✅ EduCore Dashboard ready (self‑contained).');
+    console.log('✅ Dashboard script loaded successfully.');
   </script>
 </body>
 </html>
