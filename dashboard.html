@@ -299,8 +299,6 @@
       getDocs,
       query,
       where,
-      orderBy,
-      limit,
       onSnapshot
     } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
@@ -337,23 +335,21 @@
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
     const hamburgerBtn = document.getElementById('hamburgerBtn');
-    const mainContent = document.getElementById('mainContent');
 
-    function openSidebar() {
+    hamburgerBtn.addEventListener('click', () => {
       sidebar.classList.add('open');
       overlay.classList.add('show');
-    }
-    function closeSidebar() {
+    });
+    overlay.addEventListener('click', () => {
       sidebar.classList.remove('open');
       overlay.classList.remove('show');
-    }
-
-    hamburgerBtn.addEventListener('click', openSidebar);
-    overlay.addEventListener('click', closeSidebar);
-
+    });
     document.querySelectorAll('.sidebar nav a').forEach(link => {
       link.addEventListener('click', () => {
-        if (window.innerWidth <= 768) closeSidebar();
+        if (window.innerWidth <= 768) {
+          sidebar.classList.remove('open');
+          overlay.classList.remove('show');
+        }
       });
     });
 
@@ -381,7 +377,7 @@
 
     async function loadDashboardData() {
       try {
-        // Fetch counts with teacherId filter
+        // Fetch counts (only where, no orderBy)
         const [studentsSnap, coursesSnap, lessonsSnap, liveSnap, revenueSnap] = await Promise.all([
           getDocs(query(collection(db, 'students'), where("teacherId", "==", TEACHER_ID))),
           getDocs(query(collection(db, 'courses'), where("teacherId", "==", TEACHER_ID))),
@@ -408,52 +404,51 @@
         });
         revenueEl.textContent = formatCurrency(totalRevenue);
 
-        // Recent activities (filtered by teacherId)
-        const activitiesQuery = query(
-          collection(db, 'activities'),
-          where("teacherId", "==", TEACHER_ID),
-          orderBy('timestamp', 'desc'),
-          limit(5)
-        );
-        const activitiesSnap = await getDocs(activitiesQuery);
-        if (activitiesSnap.empty) {
+        // Recent activities (filtered by teacherId, sorted client-side)
+        const activitiesSnap = await getDocs(query(collection(db, 'activities'), where("teacherId", "==", TEACHER_ID)));
+        const activities = [];
+        activitiesSnap.forEach(doc => activities.push({ id: doc.id, ...doc.data() }));
+        activities.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+        const recent = activities.slice(0, 5);
+        if (recent.length === 0) {
           recentDiv.innerHTML = '<div class="empty-state">No recent activities</div>';
         } else {
           let html = '';
-          activitiesSnap.forEach(doc => {
-            const data = doc.data();
-            const text = data.text || 'Activity';
-            const icon = data.icon || 'fa-circle';
+          recent.forEach(item => {
+            const text = item.text || 'Activity';
+            const icon = item.icon || 'fa-circle';
             html += `<div class="activity-item"><i class="fas ${icon}"></i> ${text}</div>`;
           });
           recentDiv.innerHTML = html;
         }
 
-        // Upcoming live sessions (filtered)
-        const liveQuery = query(
-          collection(db, 'liveClasses'),
-          where("teacherId", "==", TEACHER_ID),
-          orderBy('startTime', 'asc')
-        );
-        const liveSnap2 = await getDocs(liveQuery);
-        let hasLive = false;
-        let liveHtml = '';
+        // Upcoming live sessions (filtered, sorted client-side)
+        const liveSnap2 = await getDocs(query(collection(db, 'liveClasses'), where("teacherId", "==", TEACHER_ID)));
+        const lives = [];
         liveSnap2.forEach(doc => {
           const data = doc.data();
           if (data.status === 'upcoming' || data.status === 'live') {
-            hasLive = true;
-            const title = data.title || 'Live Session';
-            const time = data.startTime ? new Date(data.startTime.seconds * 1000).toLocaleString() : 'TBD';
-            liveHtml += `<div class="live-item"><i class="fas fa-video"></i> ${title} <span class="time">${time}</span></div>`;
+            lives.push({ id: doc.id, ...data });
           }
         });
-        upcomingDiv.innerHTML = hasLive ? liveHtml : '<div class="empty-state">No upcoming live sessions</div>';
+        lives.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
+        if (lives.length === 0) {
+          upcomingDiv.innerHTML = '<div class="empty-state">No upcoming live sessions</div>';
+        } else {
+          let liveHtml = '';
+          lives.forEach(l => {
+            const title = l.title || 'Live Session';
+            const time = l.startTime ? new Date(l.startTime.seconds * 1000).toLocaleString() : 'TBD';
+            liveHtml += `<div class="live-item"><i class="fas fa-video"></i> ${title} <span class="time">${time}</span></div>`;
+          });
+          upcomingDiv.innerHTML = liveHtml;
+        }
 
-        // Chart data (analytics collection filtered)
+        // Chart data (analytics)
         const chartData = await fetchChartData();
         renderChart(chartData);
 
-        // Notifications badge (filtered)
+        // Notifications badge
         const notifSnap = await getDocs(query(collection(db, 'notifications'), where("teacherId", "==", TEACHER_ID)));
         let unread = 0;
         notifSnap.forEach(doc => {
@@ -464,7 +459,7 @@
 
       } catch (error) {
         console.error('Dashboard error:', error);
-        alert('Failed to load dashboard data. Make sure you have created composite indexes for the filtered queries.');
+        alert('Failed to load dashboard data. ' + error.message);
       }
     }
 
@@ -512,6 +507,7 @@
     }
 
     function listenToUpdates() {
+      // Real‑time listeners (only where, no orderBy)
       onSnapshot(query(collection(db, 'students'), where("teacherId", "==", TEACHER_ID)), (snap) => {
         totalStudentsEl.textContent = snap.size;
       });
@@ -583,7 +579,7 @@
       alert('📬 Notifications: You have ' + notifBadge.textContent + ' unread messages.');
     });
 
-    console.log('✅ EduCore Dashboard ready (teacher-scoped).');
+    console.log('✅ EduCore Dashboard ready (teacher-scoped, no composite indexes).');
   </script>
 </body>
 </html>
