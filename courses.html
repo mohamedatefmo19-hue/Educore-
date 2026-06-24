@@ -279,12 +279,25 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.85rem;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      font-size: 0.75rem;
       color: #4a5b7a;
       margin-bottom: 0.8rem;
     }
     body.dark-mode .course-card .meta { color: #b0c0d4; }
-    .course-card .meta .price { font-weight: 700; color: #2a7de1; }
+    .course-card .meta .price { font-weight: 700; color: #2a7de1; font-size: 0.9rem; }
+    .course-card .meta .grade, .course-card .meta .subject {
+      background: #e8f0fe;
+      color: #1a67c4;
+      padding: 0.2rem 0.6rem;
+      border-radius: 30px;
+      font-weight: 600;
+    }
+    body.dark-mode .course-card .meta .grade, body.dark-mode .course-card .meta .subject {
+      background: #1f2a40;
+      color: #6b9ef0;
+    }
     .course-card .actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
     .course-card .actions button {
       padding: 0.3rem 0.8rem;
@@ -310,7 +323,6 @@
     .empty-state { text-align: center; padding: 3rem 1rem; color: #8a9bb5; }
     .empty-state i { font-size: 3rem; margin-bottom: 0.8rem; opacity: 0.5; }
 
-    /* Modal */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -357,7 +369,7 @@
       border-color: #3b465b;
       color: #eef2f6;
     }
-    .modal .form-group input:focus, .modal .form-group textarea:focus {
+    .modal .form-group input:focus, .modal .form-group textarea:focus, .modal .form-group select:focus {
       outline: none;
       border-color: #2a7de1;
       box-shadow: 0 0 0 4px rgba(42,125,225,0.1);
@@ -397,7 +409,6 @@
     .modal .form-actions .submit { background: #2a7de1; color: white; }
     .modal .form-actions .submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
-    /* Toast */
     .toast-container {
       position: fixed;
       top: 1rem;
@@ -510,6 +521,47 @@
           <textarea id="formDesc" rows="2" placeholder="Brief description"></textarea>
         </div>
         <div class="form-group">
+          <label>Subject</label>
+          <select id="formSubject">
+            <option value="">-- Select Subject --</option>
+            <option value="Arabic">Arabic</option>
+            <option value="English">English</option>
+            <option value="Math">Math</option>
+            <option value="Science">Science</option>
+            <option value="Social Studies">Social Studies</option>
+            <option value="French">French</option>
+            <option value="German">German</option>
+            <option value="Italian">Italian</option>
+            <option value="Philosophy">Philosophy</option>
+            <option value="Physics">Physics</option>
+            <option value="Chemistry">Chemistry</option>
+            <option value="Biology">Biology</option>
+            <option value="History">History</option>
+            <option value="Geography">Geography</option>
+            <option value="Computer Science">Computer Science</option>
+            <option value="Religious Studies">Religious Studies</option>
+            <option value="Art">Art</option>
+            <option value="Music">Music</option>
+            <option value="Economics">Economics</option>
+            <option value="Statistics">Statistics</option>
+            <option value="Geology">Geology</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Grade</label>
+          <select id="formGrade">
+            <option value="">-- Select Grade --</option>
+            <option value="5th Primary">5th Primary</option>
+            <option value="6th Primary">6th Primary</option>
+            <option value="1st Prep">1st Prep</option>
+            <option value="2nd Prep">2nd Prep</option>
+            <option value="3rd Prep">3rd Prep</option>
+            <option value="1st Secondary">1st Secondary</option>
+            <option value="2nd Secondary">2nd Secondary</option>
+            <option value="3rd Secondary">3rd Secondary</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label>Price ($)</label>
           <input type="number" id="formPrice" placeholder="49.99" step="0.01">
         </div>
@@ -536,23 +588,13 @@
     </div>
   </div>
 
-  <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
     import {
-      getFirestore,
-      collection,
-      getDocs,
-      addDoc,
-      updateDoc,
-      deleteDoc,
-      doc,
-      query,
-      orderBy,
-      Timestamp
+      getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, Timestamp
     } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -583,16 +625,10 @@
     // Mobile sidebar
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
-    document.getElementById('hamburgerBtn').addEventListener('click', () => {
-      sidebar.classList.add('open'); overlay.classList.add('show');
-    });
-    overlay.addEventListener('click', () => {
-      sidebar.classList.remove('open'); overlay.classList.remove('show');
-    });
+    document.getElementById('hamburgerBtn').addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.add('show'); });
+    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); });
     document.querySelectorAll('.sidebar nav a').forEach(link => {
-      link.addEventListener('click', () => {
-        if (window.innerWidth <= 768) { sidebar.classList.remove('open'); overlay.classList.remove('show'); }
-      });
+      link.addEventListener('click', () => { if (window.innerWidth <= 768) { sidebar.classList.remove('open'); overlay.classList.remove('show'); } });
     });
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -601,7 +637,6 @@
       }
     });
 
-    // Toast
     function showToast(msg, type = 'success') {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
@@ -649,6 +684,8 @@
     const courseId = document.getElementById('courseId');
     const formTitle = document.getElementById('formTitle');
     const formDesc = document.getElementById('formDesc');
+    const formSubject = document.getElementById('formSubject');
+    const formGrade = document.getElementById('formGrade');
     const formPrice = document.getElementById('formPrice');
     const formStatus = document.getElementById('formStatus');
     const previewImg = document.getElementById('thumbnailPreviewImg');
@@ -675,7 +712,7 @@
       const search = searchInput.value.toLowerCase().trim();
       const status = statusFilter.value;
       let filtered = allCourses.filter(c => {
-        const matchSearch = c.title?.toLowerCase().includes(search) || c.description?.toLowerCase().includes(search);
+        const matchSearch = c.title?.toLowerCase().includes(search) || c.description?.toLowerCase().includes(search) || c.subject?.toLowerCase().includes(search);
         const matchStatus = status === 'all' || c.status === status;
         return matchSearch && matchStatus;
       });
@@ -693,6 +730,8 @@
             <div class="desc">${c.description || ''}</div>
             <div class="meta">
               <span class="price">$${c.price || '0'}</span>
+              ${c.subject ? `<span class="subject">${c.subject}</span>` : ''}
+              ${c.grade ? `<span class="grade">${c.grade}</span>` : ''}
               <span class="badge-status ${c.status === 'archived' ? 'archived' : ''}">${c.status || 'active'}</span>
             </div>
             <div class="actions">
@@ -719,6 +758,8 @@
       e.preventDefault();
       const title = formTitle.value.trim();
       const description = formDesc.value.trim();
+      const subject = formSubject.value;
+      const grade = formGrade.value;
       const price = parseFloat(formPrice.value) || 0;
       const status = formStatus.value;
       const thumbnail = selectedThumbnailUrl || null;
@@ -729,7 +770,7 @@
       modalSubmit.textContent = 'Saving...';
 
       try {
-        const data = { title, description, price, status, updatedAt: Timestamp.now() };
+        const data = { title, description, subject, grade, price, status, updatedAt: Timestamp.now() };
         if (thumbnail) data.thumbnail = thumbnail;
 
         if (editingId) {
@@ -777,6 +818,8 @@
       courseId.value = id;
       formTitle.value = course.title || '';
       formDesc.value = course.description || '';
+      formSubject.value = course.subject || '';
+      formGrade.value = course.grade || '';
       formPrice.value = course.price || '';
       formStatus.value = course.status || 'active';
       selectedThumbnailUrl = course.thumbnail || null;
@@ -830,7 +873,7 @@
       darkToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     });
 
-    console.log('✅ Courses Management ready (Commander Pro structure).');
+    console.log('✅ Courses Management ready (with Subject & Grade).');
   </script>
 </body>
 </html>
