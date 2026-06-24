@@ -296,9 +296,7 @@
       getFirestore,
       collection,
       getDocs,
-      onSnapshot,
-      doc,
-      updateDoc
+      onSnapshot
     } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -374,60 +372,40 @@
       return '$' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 0 });
     }
 
-    async function ensureTeacherId(collectionName, docs) {
-      const updates = [];
-      docs.forEach(d => {
-        if (!d.teacherId) {
-          console.log(`Adding teacherId to ${collectionName}/${d.id}`);
-          updates.push(
-            updateDoc(doc(db, collectionName, d.id), { teacherId: TEACHER_ID }).catch(e => console.warn(e))
-          );
-        }
-      });
-      await Promise.all(updates);
-    }
-
     async function loadDashboardData() {
       try {
+        const base = `teachers/${TEACHER_ID}`;
+        
         const [studentsSnap, coursesSnap, lessonsSnap, liveSnap, revenueSnap] = await Promise.all([
-          getDocs(collection(db, 'students')),
-          getDocs(collection(db, 'courses')),
-          getDocs(collection(db, 'lessons')),
-          getDocs(collection(db, 'liveClasses')),
-          getDocs(collection(db, 'transactions'))
+          getDocs(collection(db, base, 'students')),
+          getDocs(collection(db, base, 'courses')),
+          getDocs(collection(db, base, 'lessons')),
+          getDocs(collection(db, base, 'liveClasses')),
+          getDocs(collection(db, base, 'transactions'))
         ]);
 
-        const students = studentsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        const courses = coursesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        const lessons = lessonsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        const lives = liveSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        const revenues = revenueSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-        await Promise.all([
-          ensureTeacherId('students', students),
-          ensureTeacherId('courses', courses),
-          ensureTeacherId('lessons', lessons),
-          ensureTeacherId('liveClasses', lives),
-          ensureTeacherId('transactions', revenues)
-        ]);
-
-        totalStudentsEl.textContent = students.length;
-        totalCoursesEl.textContent = courses.length;
-        totalLessonsEl.textContent = lessons.length;
+        totalStudentsEl.textContent = studentsSnap.size;
+        totalCoursesEl.textContent = coursesSnap.size;
+        totalLessonsEl.textContent = lessonsSnap.size;
 
         let liveCount = 0;
-        lives.forEach(l => {
-          if (l.status === 'upcoming' || l.status === 'live') liveCount++;
+        liveSnap.forEach(doc => {
+          const data = doc.data();
+          if (data.status === 'upcoming' || data.status === 'live') liveCount++;
         });
         liveClassesEl.textContent = liveCount;
 
         let totalRevenue = 0;
-        revenues.forEach(r => { if (r.amount) totalRevenue += Number(r.amount); });
+        revenueSnap.forEach(doc => {
+          const data = doc.data();
+          if (data.amount) totalRevenue += Number(data.amount);
+        });
         revenueEl.textContent = formatCurrency(totalRevenue);
 
-        const activitiesSnap = await getDocs(collection(db, 'activities'));
-        const activities = activitiesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        await ensureTeacherId('activities', activities);
+        // الأنشطة
+        const activitiesSnap = await getDocs(collection(db, base, 'activities'));
+        const activities = [];
+        activitiesSnap.forEach(doc => activities.push({ id: doc.id, ...doc.data() }));
         activities.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
         const recent = activities.slice(0, 5);
         recentDiv.innerHTML = recent.length === 0
@@ -438,30 +416,41 @@
               return `<div class="activity-item"><i class="fas ${icon}"></i> ${text}</div>`;
             }).join('');
 
-        const upcoming = lives.filter(l => l.status === 'upcoming' || l.status === 'live');
-        upcoming.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
-        upcomingDiv.innerHTML = upcoming.length === 0
+        // الحصص القادمة
+        const liveSnap2 = await getDocs(collection(db, base, 'liveClasses'));
+        const lives = [];
+        liveSnap2.forEach(doc => {
+          const data = doc.data();
+          if (data.status === 'upcoming' || data.status === 'live') {
+            lives.push({ id: doc.id, ...data });
+          }
+        });
+        lives.sort((a, b) => (a.startTime?.seconds || 0) - (b.startTime?.seconds || 0));
+        upcomingDiv.innerHTML = lives.length === 0
           ? '<div class="empty-state">No upcoming live sessions</div>'
-          : upcoming.map(l => {
+          : lives.map(l => {
               const title = l.title || 'Live Session';
               const time = l.startTime ? new Date(l.startTime.seconds * 1000).toLocaleString() : 'TBD';
               return `<div class="live-item"><i class="fas fa-video"></i> ${title} <span class="time">${time}</span></div>`;
             }).join('');
 
-        const analyticsSnap = await getDocs(collection(db, 'analytics'));
-        const analyticsDocs = analyticsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        await ensureTeacherId('analytics', analyticsDocs);
+        // الرسم البياني
+        const analyticsSnap = await getDocs(collection(db, base, 'analytics'));
         const dataMap = {};
-        analyticsDocs.forEach(d => { if (d.week && d.value !== undefined) dataMap[d.week] = d.value; });
+        analyticsSnap.forEach(doc => {
+          const d = doc.data();
+          if (d.week && d.value !== undefined) dataMap[d.week] = d.value;
+        });
         const weeks = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6'];
         const values = weeks.map(w => dataMap[w] !== undefined ? dataMap[w] : Math.floor(Math.random() * 40 + 20));
         renderChart({ labels: weeks, values });
 
-        const notifSnap = await getDocs(collection(db, 'notifications'));
-        const notifs = notifSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        await ensureTeacherId('notifications', notifs);
+        // الإشعارات
+        const notifSnap = await getDocs(collection(db, base, 'notifications'));
         let unread = 0;
-        notifs.forEach(n => { if (n.read === false) unread++; });
+        notifSnap.forEach(doc => {
+          if (doc.data().read === false) unread++;
+        });
         notifBadge.textContent = unread > 0 ? unread : '0';
         notifBadge.style.display = unread > 0 ? 'inline' : 'none';
 
@@ -500,29 +489,26 @@
     }
 
     function listenToUpdates() {
-      onSnapshot(collection(db, 'students'), (snap) => {
-        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        ensureTeacherId('students', docs);
-        totalStudentsEl.textContent = docs.length;
+      const base = `teachers/${TEACHER_ID}`;
+      
+      onSnapshot(collection(db, base, 'students'), (snap) => {
+        totalStudentsEl.textContent = snap.size;
       });
-      onSnapshot(collection(db, 'courses'), (snap) => {
-        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        ensureTeacherId('courses', docs);
-        totalCoursesEl.textContent = docs.length;
+      onSnapshot(collection(db, base, 'courses'), (snap) => {
+        totalCoursesEl.textContent = snap.size;
       });
-      onSnapshot(collection(db, 'liveClasses'), (snap) => {
-        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        ensureTeacherId('liveClasses', docs);
+      onSnapshot(collection(db, base, 'liveClasses'), (snap) => {
         let live = 0;
-        docs.forEach(d => { if (d.status === 'upcoming' || d.status === 'live') live++; });
+        snap.forEach(doc => {
+          const data = doc.data();
+          if (data.status === 'upcoming' || data.status === 'live') live++;
+        });
         liveClassesEl.textContent = live;
         loadDashboardData();
       });
-      onSnapshot(collection(db, 'transactions'), (snap) => {
-        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        ensureTeacherId('transactions', docs);
+      onSnapshot(collection(db, base, 'transactions'), (snap) => {
         let total = 0;
-        docs.forEach(d => { if (d.amount) total += Number(d.amount); });
+        snap.forEach(doc => { if (doc.data().amount) total += Number(doc.data().amount); });
         revenueEl.textContent = formatCurrency(total);
       });
     }
@@ -575,7 +561,7 @@
       alert('📬 Notifications: You have ' + notifBadge.textContent + ' unread messages.');
     });
 
-    console.log('✅ Dashboard ready – adds teacherId automatically.');
+    console.log('✅ Dashboard ready – Commander Pro structure.');
   </script>
 </body>
 </html>
