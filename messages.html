@@ -19,7 +19,6 @@
     }
     body.dark-mode { background: #0b0e14; color: #eef2f6; }
 
-    /* Sidebar */
     .sidebar {
       width: 260px;
       background: #ffffff;
@@ -90,7 +89,6 @@
     }
     body.dark-mode .sidebar-footer { border-top-color: #2a3442; }
     .sidebar-footer:hover { color: #e74c3c; }
-
     .sidebar-overlay {
       display: none;
       position: fixed;
@@ -100,7 +98,6 @@
     }
     .sidebar-overlay.show { display: block; }
 
-    /* Main */
     .main {
       flex: 1;
       margin-left: 260px;
@@ -158,7 +155,6 @@
       overflow: hidden;
     }
 
-    /* Conversations Panel */
     .conversations-panel {
       width: 340px;
       border-right: 1px solid #e7edf5;
@@ -247,7 +243,6 @@
     }
     .empty-conversations { padding: 2rem; text-align: center; color: #8a9bb5; }
 
-    /* Chat Area */
     .chat-area {
       flex: 1;
       display: flex;
@@ -356,7 +351,6 @@
     .btn-secondary { background: #eef2f8; color: #1a253a; }
     .btn-secondary:hover { background: #dfe6f0; }
 
-    /* Modal */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -408,7 +402,6 @@
     .modal .form-actions .cancel { background: #eef2f8; color: #1a253a; }
     .modal .form-actions .submit { background: #2a7de1; color: white; }
 
-    /* Toast */
     .toast-container {
       position: fixed;
       top: 1rem;
@@ -494,7 +487,6 @@
     </header>
 
     <div class="chat-container">
-      <!-- Conversations Panel -->
       <div class="conversations-panel" id="conversationsPanel">
         <div class="conversations-header">
           <div class="search-box">
@@ -508,7 +500,6 @@
         <div class="conversations-list" id="conversationsList"></div>
       </div>
 
-      <!-- Chat Area -->
       <div class="chat-area" id="chatArea">
         <div class="chat-header">
           <button class="back-btn" id="backToConversations"><i class="fas fa-arrow-left"></i></button>
@@ -548,24 +539,13 @@
     </div>
   </div>
 
-  <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
   <script type="module">
-    // ========== FIREBASE ==========
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
     import {
-      getFirestore,
-      collection,
-      addDoc,
-      updateDoc,
-      doc,
-      query,
-      orderBy,
-      onSnapshot,
-      serverTimestamp,
-      writeBatch
+      getFirestore, collection, addDoc, updateDoc, doc, query, orderBy, onSnapshot, serverTimestamp, writeBatch
     } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -582,15 +562,13 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // ========== AUTH ==========
     let currentUser = null;
     let TEACHER_ID = '';
     let TEACHER_NAME = '';
 
     onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = 'login.html';
-      } else {
+      if (!user) window.location.href = 'login.html';
+      else {
         currentUser = user;
         TEACHER_ID = user.uid;
         TEACHER_NAME = user.displayName || user.email || 'Teacher';
@@ -599,34 +577,21 @@
       }
     });
 
-    // ========== MOBILE SIDEBAR ==========
+    // Mobile sidebar
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
-    document.getElementById('hamburgerBtn').addEventListener('click', () => {
-      sidebar.classList.add('open');
-      overlay.classList.add('show');
-    });
-    overlay.addEventListener('click', () => {
-      sidebar.classList.remove('open');
-      overlay.classList.remove('show');
-    });
+    document.getElementById('hamburgerBtn').addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.add('show'); });
+    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); });
     document.querySelectorAll('.sidebar nav a').forEach(link => {
-      link.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-          sidebar.classList.remove('open');
-          overlay.classList.remove('show');
-        }
-      });
+      link.addEventListener('click', () => { if (window.innerWidth <= 768) { sidebar.classList.remove('open'); overlay.classList.remove('show'); } });
     });
 
-    // Logout
     document.getElementById('logoutBtn').addEventListener('click', () => {
       if (confirm('Are you sure you want to logout?')) {
         signOut(auth).then(() => window.location.href = 'login.html');
       }
     });
 
-    // ========== TOAST ==========
     function showToast(msg, type = 'success') {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
@@ -636,24 +601,19 @@
       setTimeout(() => toast.remove(), 3000);
     }
 
-    // ========== MESSAGES ==========
     let allMessages = [];
     let conversationsMap = new Map();
     let unreadCounts = new Map();
     let currentChatId = null;
     let currentStudentName = '';
 
-    // Real-time listener
     function listenToMessages() {
-      const q = query(collection(db, 'messages'), orderBy('timestamp', 'desc'));
+      const q = query(collection(db, 'teachers', TEACHER_ID, 'messages'), orderBy('timestamp', 'desc'));
       onSnapshot(q, (snapshot) => {
         allMessages = [];
         snapshot.forEach(doc => allMessages.push({ id: doc.id, ...doc.data() }));
         buildConversations();
-      }, (error) => {
-        console.error(error);
-        showToast('Failed to load messages', 'error');
-      });
+      }, (error) => { console.error(error); showToast('Failed to load messages', 'error'); });
     }
 
     function buildConversations() {
@@ -667,30 +627,19 @@
         const otherName = isTeacherSender ? (msg.receiverName || otherId) : (msg.senderName || otherId);
 
         if (!conversationsMap.has(otherId)) {
-          conversationsMap.set(otherId, {
-            studentId: otherId,
-            studentName: otherName,
-            lastMessage: msg.text,
-            lastTimestamp: msg.timestamp,
-            unreadCount: 0
-          });
+          conversationsMap.set(otherId, { studentId: otherId, studentName: otherName, lastMessage: msg.text, lastTimestamp: msg.timestamp, unreadCount: 0 });
         } else {
           const conv = conversationsMap.get(otherId);
           if (msg.timestamp && (!conv.lastTimestamp || msg.timestamp > conv.lastTimestamp)) {
-            conv.lastMessage = msg.text;
-            conv.lastTimestamp = msg.timestamp;
+            conv.lastMessage = msg.text; conv.lastTimestamp = msg.timestamp;
           }
         }
-
         if (msg.receiverId === TEACHER_ID && msg.read === false) {
           unreadCounts.set(otherId, (unreadCounts.get(otherId) || 0) + 1);
         }
       });
 
-      conversationsMap.forEach((conv, otherId) => {
-        conv.unreadCount = unreadCounts.get(otherId) || 0;
-      });
-
+      conversationsMap.forEach((conv, otherId) => { conv.unreadCount = unreadCounts.get(otherId) || 0; });
       renderConversations();
       if (currentChatId) renderChatMessages(currentChatId);
     }
@@ -698,161 +647,83 @@
     function renderConversations() {
       const container = document.getElementById('conversationsList');
       const searchTerm = document.getElementById('searchConversation').value.toLowerCase();
-      const conversationsArray = Array.from(conversationsMap.values())
-        .filter(c => c.studentName.toLowerCase().includes(searchTerm))
-        .sort((a, b) => (b.lastTimestamp?.seconds || 0) - (a.lastTimestamp?.seconds || 0));
-
-      if (conversationsArray.length === 0) {
-        container.innerHTML = '<div class="empty-conversations">No conversations yet.</div>';
-        return;
-      }
-
-      container.innerHTML = conversationsArray.map(conv => {
-        const timeStr = conv.lastTimestamp ? new Date(conv.lastTimestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      const arr = Array.from(conversationsMap.values()).filter(c => c.studentName.toLowerCase().includes(searchTerm)).sort((a,b) => (b.lastTimestamp?.seconds || 0) - (a.lastTimestamp?.seconds || 0));
+      if (!arr.length) { container.innerHTML = '<div class="empty-conversations">No conversations yet.</div>'; return; }
+      container.innerHTML = arr.map(conv => {
+        const timeStr = conv.lastTimestamp ? new Date(conv.lastTimestamp.seconds * 1000).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) : '';
         const activeClass = currentChatId === conv.studentId ? 'active' : '';
-        return `
-          <div class="conversation-item ${activeClass}" data-chatid="${conv.studentId}" data-studentname="${escapeHtml(conv.studentName)}">
-            <div class="conversation-avatar">${conv.studentName.charAt(0).toUpperCase()}</div>
-            <div class="conversation-info">
-              <div class="conversation-name">${escapeHtml(conv.studentName)}</div>
-              <div class="conversation-preview">${escapeHtml(conv.lastMessage || '')}</div>
-            </div>
-            <div class="conversation-meta">
-              <div>${timeStr}</div>
-              ${conv.unreadCount > 0 ? `<span class="unread-badge">${conv.unreadCount}</span>` : ''}
-            </div>
-          </div>`;
+        return `<div class="conversation-item ${activeClass}" data-chatid="${conv.studentId}" data-studentname="${escapeHtml(conv.studentName)}">
+          <div class="conversation-avatar">${conv.studentName.charAt(0).toUpperCase()}</div>
+          <div class="conversation-info"><div class="conversation-name">${escapeHtml(conv.studentName)}</div><div class="conversation-preview">${escapeHtml(conv.lastMessage||'')}</div></div>
+          <div class="conversation-meta"><div>${timeStr}</div>${conv.unreadCount>0?`<span class="unread-badge">${conv.unreadCount}</span>`:''}</div>
+        </div>`;
       }).join('');
-
-      container.querySelectorAll('.conversation-item').forEach(item => {
-        item.addEventListener('click', () => {
-          selectConversation(item.dataset.chatid, item.dataset.studentname);
-        });
-      });
+      container.querySelectorAll('.conversation-item').forEach(item => item.addEventListener('click', () => selectConversation(item.dataset.chatid, item.dataset.studentname)));
     }
 
     document.getElementById('searchConversation').addEventListener('input', renderConversations);
 
     function selectConversation(studentId, studentName) {
-      currentChatId = studentId;
-      currentStudentName = studentName;
-
+      currentChatId = studentId; currentStudentName = studentName;
       document.getElementById('chatAvatar').textContent = studentName.charAt(0).toUpperCase();
       document.getElementById('chatName').textContent = studentName;
-      renderChatMessages(studentId);
-      markMessagesAsRead(studentId);
-
-      if (window.innerWidth <= 768) {
-        document.getElementById('conversationsPanel').style.display = 'none';
-        document.getElementById('chatArea').classList.add('active');
-      }
+      renderChatMessages(studentId); markMessagesAsRead(studentId);
+      if (window.innerWidth <= 768) { document.getElementById('conversationsPanel').style.display = 'none'; document.getElementById('chatArea').classList.add('active'); }
     }
 
     document.getElementById('backToConversations').addEventListener('click', () => {
-      if (window.innerWidth <= 768) {
-        document.getElementById('conversationsPanel').style.display = 'block';
-        document.getElementById('chatArea').classList.remove('active');
-      }
+      if (window.innerWidth <= 768) { document.getElementById('conversationsPanel').style.display = 'block'; document.getElementById('chatArea').classList.remove('active'); }
     });
 
     async function markMessagesAsRead(chatId) {
       const batch = writeBatch(db);
-      allMessages.filter(msg => msg.receiverId === TEACHER_ID && msg.senderId === chatId && msg.read === false)
-        .forEach(msg => batch.update(doc(db, 'messages', msg.id), { read: true }));
-      try { await batch.commit(); } catch (err) { console.error(err); }
+      allMessages.filter(m => m.receiverId === TEACHER_ID && m.senderId === chatId && m.read === false).forEach(m => batch.update(doc(db, 'teachers', TEACHER_ID, 'messages', m.id), { read: true }));
+      try { await batch.commit(); } catch (e) { console.error(e); }
     }
 
     function renderChatMessages(chatId) {
       const container = document.getElementById('chatMessages');
-      const chatMessages = allMessages
-        .filter(msg => (msg.senderId === chatId && msg.receiverId === TEACHER_ID) || (msg.senderId === TEACHER_ID && msg.receiverId === chatId))
-        .sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
-
-      if (chatMessages.length === 0) {
-        container.innerHTML = '<div class="no-chat-selected">No messages yet. Say hello!</div>';
-        return;
-      }
-
-      container.innerHTML = chatMessages.map(msg => {
-        const isSent = msg.senderId === TEACHER_ID;
-        const timeStr = msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-        return `
-          <div class="message-bubble ${isSent ? 'message-sent' : 'message-received'}">
-            ${escapeHtml(msg.text)}
-            <span class="message-time">${timeStr}</span>
-          </div>`;
+      const msgs = allMessages.filter(m => (m.senderId===chatId && m.receiverId===TEACHER_ID) || (m.senderId===TEACHER_ID && m.receiverId===chatId)).sort((a,b) => (a.timestamp?.seconds||0)-(b.timestamp?.seconds||0));
+      if (!msgs.length) { container.innerHTML = '<div class="no-chat-selected">No messages yet. Say hello!</div>'; return; }
+      container.innerHTML = msgs.map(m => {
+        const isSent = m.senderId === TEACHER_ID;
+        const timeStr = m.timestamp ? new Date(m.timestamp.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+        return `<div class="message-bubble ${isSent?'message-sent':'message-received'}">${escapeHtml(m.text)}<span class="message-time">${timeStr}</span></div>`;
       }).join('');
       container.scrollTop = container.scrollHeight;
     }
 
-    // Send message
     document.getElementById('sendMessageBtn').addEventListener('click', async () => {
       const input = document.getElementById('messageInput');
       const text = input.value.trim();
       if (!text || !currentChatId) return;
-
       try {
-        await addDoc(collection(db, 'messages'), {
-          senderId: TEACHER_ID,
-          senderName: TEACHER_NAME,
-          receiverId: currentChatId,
-          receiverName: currentStudentName,
-          text,
-          timestamp: serverTimestamp(),
-          read: false
-        });
+        await addDoc(collection(db, 'teachers', TEACHER_ID, 'messages'), { senderId: TEACHER_ID, senderName: TEACHER_NAME, receiverId: currentChatId, receiverName: currentStudentName, text, timestamp: serverTimestamp(), read: false });
         input.value = '';
-      } catch (error) {
-        showToast('Error sending message.', 'error');
-      }
+      } catch (e) { showToast('Error sending message.', 'error'); }
     });
 
-    // New conversation modal
-    document.getElementById('newChatBtn').addEventListener('click', () => {
-      document.getElementById('newChatModal').classList.add('active');
-    });
-    document.getElementById('newChatModalClose').addEventListener('click', () => {
-      document.getElementById('newChatModal').classList.remove('active');
-    });
-    document.getElementById('newChatCancel').addEventListener('click', () => {
-      document.getElementById('newChatModal').classList.remove('active');
-    });
-
+    document.getElementById('newChatBtn').addEventListener('click', () => document.getElementById('newChatModal').classList.add('active'));
+    document.getElementById('newChatModalClose').addEventListener('click', () => document.getElementById('newChatModal').classList.remove('active'));
+    document.getElementById('newChatCancel').addEventListener('click', () => document.getElementById('newChatModal').classList.remove('active'));
     document.getElementById('startNewChatBtn').addEventListener('click', () => {
       const name = document.getElementById('newStudentName').value.trim();
       const id = document.getElementById('newStudentId').value.trim() || name.toLowerCase().replace(/\s/g, '_');
-      if (!name) {
-        showToast('Please enter a student name.', 'error');
-        return;
-      }
+      if (!name) { showToast('Please enter a student name.', 'error'); return; }
       document.getElementById('newChatModal').classList.remove('active');
       document.getElementById('newStudentName').value = '';
       document.getElementById('newStudentId').value = '';
       selectConversation(id, name);
     });
-
-    // Close modal on overlay click
-    document.getElementById('newChatModal').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('newChatModal')) {
-        document.getElementById('newChatModal').classList.remove('active');
-      }
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        document.getElementById('newChatModal').classList.remove('active');
-      }
-    });
+    document.getElementById('newChatModal').addEventListener('click', (e) => { if (e.target === document.getElementById('newChatModal')) document.getElementById('newChatModal').classList.remove('active'); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.getElementById('newChatModal').classList.remove('active'); });
 
     function escapeHtml(text) {
       if (!text) return '';
-      return String(text).replace(/[&<>"']/g, m => {
-        if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;';
-        if (m === '"') return '&quot;'; if (m === "'") return '&#039;'; return m;
-      });
+      return String(text).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
     }
 
-    // ========== LANGUAGE & DARK MODE ==========
+    // Language & Dark Mode
     let lang = 'en';
     const langToggle = document.getElementById('langToggle');
     const darkToggle = document.getElementById('darkToggle');
@@ -867,14 +738,12 @@
         document.getElementById('searchConversation').placeholder = 'بحث في المحادثات...';
         document.getElementById('newChatBtn').innerHTML = '<i class="fas fa-plus"></i> محادثة جديدة';
         document.getElementById('messageInput').placeholder = 'اكتب رسالة...';
-        document.getElementById('chatName').textContent = currentStudentName || 'اختر محادثة';
         mainEl.classList.add('rtl');
       } else {
         document.querySelector('.navbar h1').textContent = '💬 Messages';
         document.getElementById('searchConversation').placeholder = 'Search conversations...';
         document.getElementById('newChatBtn').innerHTML = '<i class="fas fa-plus"></i> New Conversation';
         document.getElementById('messageInput').placeholder = 'Type a message...';
-        document.getElementById('chatName').textContent = currentStudentName || 'Select a conversation';
         mainEl.classList.remove('rtl');
       }
     });
@@ -885,7 +754,7 @@
       darkToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     });
 
-    console.log('✅ Messages ready.');
+    console.log('✅ Messages ready (Commander Pro structure).');
   </script>
 </body>
 </html>
