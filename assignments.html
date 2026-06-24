@@ -19,7 +19,6 @@
     }
     body.dark-mode { background: #0b0e14; color: #eef2f6; }
 
-    /* Sidebar */
     .sidebar {
       width: 260px;
       background: #ffffff;
@@ -90,7 +89,6 @@
     }
     body.dark-mode .sidebar-footer { border-top-color: #2a3442; }
     .sidebar-footer:hover { color: #e74c3c; }
-
     .sidebar-overlay {
       display: none;
       position: fixed;
@@ -100,7 +98,6 @@
     }
     .sidebar-overlay.show { display: block; }
 
-    /* Main */
     .main {
       flex: 1;
       margin-left: 260px;
@@ -275,7 +272,6 @@
     .empty-state { text-align: center; padding: 3rem 1rem; color: #8a9bb5; }
     .empty-state i { font-size: 3rem; margin-bottom: 0.8rem; opacity: 0.5; }
 
-    /* Modal */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -324,7 +320,7 @@
       border-color: #3b465b;
       color: #eef2f6;
     }
-    .modal .form-group input:focus, .modal .form-group textarea:focus {
+    .modal .form-group input:focus, .modal .form-group textarea:focus, .modal .form-group select:focus {
       outline: none;
       border-color: #2a7de1;
       box-shadow: 0 0 0 4px rgba(42,125,225,0.1);
@@ -351,7 +347,6 @@
     .submission-item:last-child { border-bottom: none; }
     .submission-info { flex: 1; }
 
-    /* Toast */
     .toast-container {
       position: fixed;
       top: 1rem;
@@ -552,25 +547,13 @@
     </div>
   </div>
 
-  <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
   <script type="module">
-    // ========== FIREBASE ==========
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
     import {
-      getFirestore,
-      collection,
-      getDocs,
-      addDoc,
-      updateDoc,
-      deleteDoc,
-      doc,
-      query,
-      orderBy,
-      onSnapshot,
-      serverTimestamp
+      getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, onSnapshot, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -587,53 +570,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // ========== AUTH ==========
-    onAuthStateChanged(auth, (user) => {
-      if (!user) window.location.href = 'login.html';
-      else {
-        document.body.classList.add('auth-ready');
-        listenToAssignments();
-      }
-    });
-
-    // ========== MOBILE SIDEBAR ==========
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    document.getElementById('hamburgerBtn').addEventListener('click', () => {
-      sidebar.classList.add('open');
-      overlay.classList.add('show');
-    });
-    overlay.addEventListener('click', () => {
-      sidebar.classList.remove('open');
-      overlay.classList.remove('show');
-    });
-    document.querySelectorAll('.sidebar nav a').forEach(link => {
-      link.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-          sidebar.classList.remove('open');
-          overlay.classList.remove('show');
-        }
-      });
-    });
-
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      if (confirm('Are you sure you want to logout?')) {
-        signOut(auth).then(() => window.location.href = 'login.html');
-      }
-    });
-
-    // ========== TOAST ==========
-    function showToast(msg, type = 'success') {
-      const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${msg}`;
-      container.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-
-    // ========== DATA ==========
+    let TEACHER_ID = '';
     const tableBody = document.getElementById('assignmentsTableBody');
     const searchInput = document.getElementById('searchInput');
     const formModal = document.getElementById('formModal');
@@ -645,9 +582,41 @@
     let currentDeleteId = null;
     let currentSubmissionsAssignmentId = null;
 
-    // Real-time listener
+    onAuthStateChanged(auth, (user) => {
+      if (!user) window.location.href = 'login.html';
+      else {
+        TEACHER_ID = user.uid;
+        document.body.classList.add('auth-ready');
+        listenToAssignments();
+      }
+    });
+
+    // Mobile sidebar
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    document.getElementById('hamburgerBtn').addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.add('show'); });
+    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); });
+    document.querySelectorAll('.sidebar nav a').forEach(link => {
+      link.addEventListener('click', () => { if (window.innerWidth <= 768) { sidebar.classList.remove('open'); overlay.classList.remove('show'); } });
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      if (confirm('Are you sure you want to logout?')) {
+        signOut(auth).then(() => window.location.href = 'login.html');
+      }
+    });
+
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${msg}`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
     function listenToAssignments() {
-      const q = query(collection(db, 'assignments'), orderBy('dueDate', 'asc'));
+      const q = query(collection(db, 'teachers', TEACHER_ID, 'assignments'), orderBy('dueDate', 'asc'));
       onSnapshot(q, (snapshot) => {
         allAssignments = [];
         snapshot.forEach((doc) => allAssignments.push({ id: doc.id, ...doc.data() }));
@@ -720,10 +689,7 @@
       formModal.classList.add('active');
     }
 
-    function closeFormModal() {
-      formModal.classList.remove('active');
-    }
-
+    function closeFormModal() { formModal.classList.remove('active'); }
     document.getElementById('formModalClose').addEventListener('click', closeFormModal);
     document.getElementById('formCancelBtn').addEventListener('click', closeFormModal);
 
@@ -742,39 +708,29 @@
 
       try {
         if (id) {
-          await updateDoc(doc(db, 'assignments', id), data);
+          await updateDoc(doc(db, 'teachers', TEACHER_ID, 'assignments', id), data);
           showToast('Assignment updated!', 'success');
         } else {
           data.createdAt = serverTimestamp();
-          await addDoc(collection(db, 'assignments'), data);
+          await addDoc(collection(db, 'teachers', TEACHER_ID, 'assignments'), data);
           showToast('Assignment created!', 'success');
         }
         closeFormModal();
-      } catch (error) {
-        showToast('Error saving: ' + error.message, 'error');
-      }
+      } catch (error) { showToast('Error saving: ' + error.message, 'error'); }
     });
 
     // Delete
-    function openDeleteModal(id) {
-      currentDeleteId = id;
-      deleteModal.classList.add('active');
-    }
-    function closeDeleteModal() {
-      deleteModal.classList.remove('active');
-      currentDeleteId = null;
-    }
+    function openDeleteModal(id) { currentDeleteId = id; deleteModal.classList.add('active'); }
+    function closeDeleteModal() { deleteModal.classList.remove('active'); currentDeleteId = null; }
     document.getElementById('deleteModalClose').addEventListener('click', closeDeleteModal);
     document.getElementById('deleteCancelBtn').addEventListener('click', closeDeleteModal);
     document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
       if (!currentDeleteId) return;
       try {
-        await deleteDoc(doc(db, 'assignments', currentDeleteId));
+        await deleteDoc(doc(db, 'teachers', TEACHER_ID, 'assignments', currentDeleteId));
         showToast('Assignment deleted.', 'success');
         closeDeleteModal();
-      } catch (error) {
-        showToast('Error deleting: ' + error.message, 'error');
-      }
+      } catch (error) { showToast('Error deleting: ' + error.message, 'error'); }
     });
 
     // Submissions
@@ -785,7 +741,7 @@
       contentDiv.innerHTML = '<p style="color: #8a9bb5;">Loading submissions...</p>';
 
       try {
-        const subsSnap = await getDocs(query(collection(db, 'assignments', assignmentId, 'submissions'), orderBy('submissionDate', 'desc')));
+        const subsSnap = await getDocs(query(collection(db, 'teachers', TEACHER_ID, 'assignments', assignmentId, 'submissions'), orderBy('submissionDate', 'desc')));
         if (subsSnap.empty) {
           contentDiv.innerHTML = '<div class="empty-state">No submissions yet.</div>';
           return;
@@ -816,15 +772,10 @@
             openGradeModal(btn.dataset.assignment, btn.dataset.submission, btn.dataset.student, btn.dataset.grade);
           });
         });
-      } catch (error) {
-        contentDiv.innerHTML = '<p style="color: #e74c3c;">Error loading submissions.</p>';
-      }
+      } catch (error) { contentDiv.innerHTML = '<p style="color: #e74c3c;">Error loading submissions.</p>'; }
     }
 
-    function closeSubmissionsModal() {
-      submissionsModal.classList.remove('active');
-      currentSubmissionsAssignmentId = null;
-    }
+    function closeSubmissionsModal() { submissionsModal.classList.remove('active'); currentSubmissionsAssignmentId = null; }
     document.getElementById('submissionsModalClose').addEventListener('click', closeSubmissionsModal);
     document.getElementById('submissionsCloseBtn').addEventListener('click', closeSubmissionsModal);
 
@@ -837,9 +788,7 @@
       gradeModal.classList.add('active');
     }
 
-    function closeGradeModal() {
-      gradeModal.classList.remove('active');
-    }
+    function closeGradeModal() { gradeModal.classList.remove('active'); }
     document.getElementById('gradeModalClose').addEventListener('click', closeGradeModal);
     document.getElementById('gradeCancelBtn').addEventListener('click', closeGradeModal);
 
@@ -850,50 +799,33 @@
       const grade = document.getElementById('gradeInput').value.trim();
 
       try {
-        await updateDoc(doc(db, 'assignments', assignmentId, 'submissions', submissionId), {
-          grade,
-          gradedAt: serverTimestamp()
+        await updateDoc(doc(db, 'teachers', TEACHER_ID, 'assignments', assignmentId, 'submissions', submissionId), {
+          grade, gradedAt: serverTimestamp()
         });
         showToast('Grade saved!', 'success');
         closeGradeModal();
-        if (currentSubmissionsAssignmentId === assignmentId) {
-          openSubmissions(assignmentId);
-        }
-      } catch (error) {
-        showToast('Error saving grade: ' + error.message, 'error');
-      }
+        if (currentSubmissionsAssignmentId === assignmentId) openSubmissions(assignmentId);
+      } catch (error) { showToast('Error saving grade: ' + error.message, 'error'); }
     });
 
     // Close modals on overlay click
     [formModal, deleteModal, submissionsModal, gradeModal].forEach(modal => {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.classList.remove('active');
-      });
+      modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
     });
 
-    // Escape key
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        closeFormModal();
-        closeDeleteModal();
-        closeSubmissionsModal();
-        closeGradeModal();
-      }
+      if (e.key === 'Escape') { closeFormModal(); closeDeleteModal(); closeSubmissionsModal(); closeGradeModal(); }
     });
 
     function escapeHtml(text) {
       if (!text) return '';
       return String(text).replace(/[&<>"']/g, m => {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        if (m === '"') return '&quot;';
-        if (m === "'") return '&#039;';
-        return m;
+        if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;';
+        if (m === '"') return '&quot;'; if (m === "'") return '&#039;'; return m;
       });
     }
 
-    // ========== LANGUAGE & DARK MODE ==========
+    // Language & Dark Mode
     let lang = 'en';
     const langToggle = document.getElementById('langToggle');
     const darkToggle = document.getElementById('darkToggle');
@@ -934,7 +866,7 @@
       darkToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     });
 
-    console.log('✅ Assignments Management ready.');
+    console.log('✅ Assignments Management ready (Commander Pro structure).');
   </script>
 </body>
 </html>
