@@ -19,7 +19,6 @@
     }
     body.dark-mode { background: #0b0e14; color: #eef2f6; }
 
-    /* Sidebar */
     .sidebar {
       width: 260px;
       background: #ffffff;
@@ -90,7 +89,6 @@
     }
     body.dark-mode .sidebar-footer { border-top-color: #2a3442; }
     .sidebar-footer:hover { color: #e74c3c; }
-
     .sidebar-overlay {
       display: none;
       position: fixed;
@@ -100,7 +98,6 @@
     }
     .sidebar-overlay.show { display: block; }
 
-    /* Main */
     .main {
       flex: 1;
       margin-left: 260px;
@@ -305,7 +302,6 @@
     .empty-state { text-align: center; padding: 3rem 1rem; color: #8a9bb5; }
     .empty-state i { font-size: 3rem; margin-bottom: 0.8rem; opacity: 0.5; }
 
-    /* Modal */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -369,7 +365,6 @@
     .modal .form-actions .submit { background: #2a7de1; color: white; }
     .modal .form-actions .submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
-    /* Toast */
     .toast-container {
       position: fixed;
       top: 1rem;
@@ -526,23 +521,13 @@
     </div>
   </div>
 
-  <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
   <script type="module">
-    // ========== FIREBASE ==========
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
     import {
-      getFirestore,
-      collection,
-      getDocs,
-      updateDoc,
-      deleteDoc,
-      doc,
-      query,
-      orderBy,
-      Timestamp
+      getFirestore, collection, getDocs, updateDoc, deleteDoc, doc, query, orderBy, Timestamp
     } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -559,54 +544,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // ========== AUTH ==========
-    onAuthStateChanged(auth, (user) => {
-      if (!user) window.location.href = 'login.html';
-      else {
-        document.body.classList.add('auth-ready');
-        loadCourses();
-        loadLessons();
-      }
-    });
-
-    // ========== MOBILE SIDEBAR ==========
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    document.getElementById('hamburgerBtn').addEventListener('click', () => {
-      sidebar.classList.add('open');
-      overlay.classList.add('show');
-    });
-    overlay.addEventListener('click', () => {
-      sidebar.classList.remove('open');
-      overlay.classList.remove('show');
-    });
-    document.querySelectorAll('.sidebar nav a').forEach(link => {
-      link.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-          sidebar.classList.remove('open');
-          overlay.classList.remove('show');
-        }
-      });
-    });
-
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      if (confirm('Are you sure you want to logout?')) {
-        signOut(auth).then(() => window.location.href = 'login.html');
-      }
-    });
-
-    // ========== TOAST ==========
-    function showToast(msg, type = 'success') {
-      const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${msg}`;
-      container.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-
-    // ========== DATA ==========
+    let TEACHER_ID = '';
     const urlParams = new URLSearchParams(window.location.search);
     const courseId = urlParams.get('courseId');
 
@@ -631,9 +569,43 @@
     let allCourses = [];
     let editingId = null;
 
+    onAuthStateChanged(auth, (user) => {
+      if (!user) window.location.href = 'login.html';
+      else {
+        TEACHER_ID = user.uid;
+        document.body.classList.add('auth-ready');
+        loadCourses();
+        loadLessons();
+      }
+    });
+
+    // Mobile sidebar
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    document.getElementById('hamburgerBtn').addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.add('show'); });
+    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); });
+    document.querySelectorAll('.sidebar nav a').forEach(link => {
+      link.addEventListener('click', () => { if (window.innerWidth <= 768) { sidebar.classList.remove('open'); overlay.classList.remove('show'); } });
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      if (confirm('Are you sure you want to logout?')) {
+        signOut(auth).then(() => window.location.href = 'login.html');
+      }
+    });
+
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${msg}`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
     async function loadCourses() {
       try {
-        const snap = await getDocs(collection(db, 'courses'));
+        const snap = await getDocs(collection(db, 'teachers', TEACHER_ID, 'courses'));
         allCourses = [];
         snap.forEach(doc => allCourses.push({ id: doc.id, ...doc.data() }));
         courseFilter.innerHTML = '<option value="all">All Courses</option>';
@@ -643,7 +615,6 @@
           formCourse.innerHTML += `<option value="${c.id}">${c.title || 'Untitled'}</option>`;
         });
 
-        // If courseId provided, set filters and links
         if (courseId) {
           courseFilter.value = courseId;
           backToCourseBtn.href = `course-details.html?id=${courseId}`;
@@ -652,14 +623,12 @@
           backToCourseBtn.href = 'courses.html';
           uploadLessonBtn.href = 'lesson-upload.html';
         }
-      } catch (e) {
-        showToast('Failed to load courses', 'error');
-      }
+      } catch (e) { showToast('Failed to load courses', 'error'); }
     }
 
     async function loadLessons() {
       try {
-        const q = query(collection(db, 'lessons'), orderBy('createdAt', 'desc'));
+        const q = query(collection(db, 'teachers', TEACHER_ID, 'lessons'), orderBy('createdAt', 'desc'));
         const snap = await getDocs(q);
         allLessons = [];
         snap.forEach(doc => allLessons.push({ id: doc.id, ...doc.data() }));
@@ -729,29 +698,19 @@
       modalSubmit.textContent = 'Saving...';
 
       try {
-        const data = {
-          title,
-          description,
-          courseId: selectedCourseId,
-          status,
-          updatedAt: Timestamp.now()
-        };
-        await updateDoc(doc(db, 'lessons', editingId), data);
+        const data = { title, description, courseId: selectedCourseId, status, updatedAt: Timestamp.now() };
+        await updateDoc(doc(db, 'teachers', TEACHER_ID, 'lessons', editingId), data);
         showToast('Lesson updated!', 'success');
         closeModal();
         loadLessons();
-      } catch (err) {
-        showToast('Error saving lesson: ' + err.message, 'error');
-      } finally {
-        modalSubmit.disabled = false;
-        modalSubmit.textContent = 'Save';
-      }
+      } catch (err) { showToast('Error saving lesson: ' + err.message, 'error'); }
+      finally { modalSubmit.disabled = false; modalSubmit.textContent = 'Save'; }
     });
 
     async function deleteLesson(id) {
       if (!confirm('Delete this lesson permanently?')) return;
       try {
-        await deleteDoc(doc(db, 'lessons', id));
+        await deleteDoc(doc(db, 'teachers', TEACHER_ID, 'lessons', id));
         showToast('Lesson deleted', 'success');
         loadLessons();
       } catch (e) { showToast('Error deleting lesson', 'error'); }
@@ -761,7 +720,7 @@
       const lesson = allLessons.find(l => l.id === id);
       const newStatus = lesson.status === 'published' ? 'unpublished' : 'published';
       try {
-        await updateDoc(doc(db, 'lessons', id), { status: newStatus });
+        await updateDoc(doc(db, 'teachers', TEACHER_ID, 'lessons', id), { status: newStatus });
         showToast(`Lesson ${newStatus === 'published' ? 'published' : 'unpublished'}`, 'success');
         loadLessons();
       } catch (e) { showToast('Error updating status', 'error'); }
@@ -780,9 +739,7 @@
       modal.classList.add('active');
     }
 
-    function closeModal() {
-      modal.classList.remove('active');
-    }
+    function closeModal() { modal.classList.remove('active'); }
 
     modalCancel.addEventListener('click', closeModal);
     modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
@@ -791,7 +748,7 @@
     statusFilter.addEventListener('change', renderLessons);
     courseFilter.addEventListener('change', renderLessons);
 
-    // ========== LANGUAGE & DARK MODE ==========
+    // Language & Dark Mode
     let lang = 'en';
     const langToggle = document.getElementById('langToggle');
     const darkToggle = document.getElementById('darkToggle');
@@ -820,7 +777,7 @@
       darkToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     });
 
-    console.log('✅ Lessons Management ready.');
+    console.log('✅ Lessons Management ready (Commander Pro structure).');
   </script>
 </body>
 </html>
