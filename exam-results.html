@@ -20,7 +20,6 @@
     }
     body.dark-mode { background: #0b0e14; color: #eef2f6; }
 
-    /* Sidebar */
     .sidebar {
       width: 260px;
       background: #ffffff;
@@ -91,7 +90,6 @@
     }
     body.dark-mode .sidebar-footer { border-top-color: #2a3442; }
     .sidebar-footer:hover { color: #e74c3c; }
-
     .sidebar-overlay {
       display: none;
       position: fixed;
@@ -101,7 +99,6 @@
     }
     .sidebar-overlay.show { display: block; }
 
-    /* Main */
     .main {
       flex: 1;
       margin-left: 260px;
@@ -271,7 +268,6 @@
     .empty-state { text-align: center; padding: 3rem 1rem; color: #8a9bb5; }
     .empty-state i { font-size: 3rem; margin-bottom: 0.8rem; opacity: 0.5; }
 
-    /* Toast */
     .toast-container {
       position: fixed;
       top: 1rem;
@@ -405,19 +401,13 @@
     </div>
   </div>
 
-  <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
   <script type="module">
-    // ========== FIREBASE ==========
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
     import {
-      getFirestore,
-      collection,
-      query,
-      orderBy,
-      onSnapshot
+      getFirestore, collection, query, orderBy, onSnapshot
     } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -434,53 +424,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // ========== AUTH ==========
-    onAuthStateChanged(auth, (user) => {
-      if (!user) window.location.href = 'login.html';
-      else {
-        document.body.classList.add('auth-ready');
-        listenToResults();
-      }
-    });
-
-    // ========== MOBILE SIDEBAR ==========
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    document.getElementById('hamburgerBtn').addEventListener('click', () => {
-      sidebar.classList.add('open');
-      overlay.classList.add('show');
-    });
-    overlay.addEventListener('click', () => {
-      sidebar.classList.remove('open');
-      overlay.classList.remove('show');
-    });
-    document.querySelectorAll('.sidebar nav a').forEach(link => {
-      link.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-          sidebar.classList.remove('open');
-          overlay.classList.remove('show');
-        }
-      });
-    });
-
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      if (confirm('Are you sure you want to logout?')) {
-        signOut(auth).then(() => window.location.href = 'login.html');
-      }
-    });
-
-    // ========== TOAST ==========
-    function showToast(msg, type = 'success') {
-      const container = document.getElementById('toastContainer');
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${msg}`;
-      container.appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-
-    // ========== DATA ==========
+    let TEACHER_ID = '';
     const searchInput = document.getElementById('searchInput');
     const tableBody = document.getElementById('resultsTableBody');
     const totalExamsEl = document.getElementById('totalExams');
@@ -491,9 +435,42 @@
     let allResults = [];
     let scoreDistributionChart, passFailChart;
 
+    onAuthStateChanged(auth, (user) => {
+      if (!user) window.location.href = 'login.html';
+      else {
+        TEACHER_ID = user.uid;
+        document.body.classList.add('auth-ready');
+        listenToResults();
+      }
+    });
+
+    // Mobile sidebar
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    document.getElementById('hamburgerBtn').addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.add('show'); });
+    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); });
+    document.querySelectorAll('.sidebar nav a').forEach(link => {
+      link.addEventListener('click', () => { if (window.innerWidth <= 768) { sidebar.classList.remove('open'); overlay.classList.remove('show'); } });
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      if (confirm('Are you sure you want to logout?')) {
+        signOut(auth).then(() => window.location.href = 'login.html');
+      }
+    });
+
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${msg}`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
     // Real-time listener
     function listenToResults() {
-      const q = query(collection(db, 'results'), orderBy('date', 'desc'));
+      const q = query(collection(db, 'teachers', TEACHER_ID, 'results'), orderBy('date', 'desc'));
       onSnapshot(q, (snapshot) => {
         allResults = [];
         snapshot.forEach((doc) => allResults.push({ id: doc.id, ...doc.data() }));
@@ -628,7 +605,7 @@
       });
     }
 
-    // ========== LANGUAGE & DARK MODE ==========
+    // Language & Dark Mode
     let lang = 'en';
     const langToggle = document.getElementById('langToggle');
     const darkToggle = document.getElementById('darkToggle');
@@ -677,7 +654,7 @@
       darkToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     });
 
-    console.log('✅ Exam Results ready.');
+    console.log('✅ Exam Results ready (Commander Pro structure).');
   </script>
 </body>
 </html>
