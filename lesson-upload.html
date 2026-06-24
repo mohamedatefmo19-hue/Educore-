@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <!-- Cloudinary Upload Widget -->
   <script src="https://widget.cloudinary.com/v2.0/global/all.js" type="text/javascript"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -21,7 +20,6 @@
     }
     body.dark-mode { background: #0b0e14; color: #eef2f6; }
 
-    /* Sidebar */
     .sidebar {
       width: 260px;
       background: #ffffff;
@@ -92,7 +90,6 @@
     }
     body.dark-mode .sidebar-footer { border-top-color: #2a3442; }
     .sidebar-footer:hover { color: #e74c3c; }
-
     .sidebar-overlay {
       display: none;
       position: fixed;
@@ -102,7 +99,6 @@
     }
     .sidebar-overlay.show { display: block; }
 
-    /* Main */
     .main {
       flex: 1;
       margin-left: 260px;
@@ -258,7 +254,6 @@
 
     .form-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
 
-    /* Toast */
     .toast-container {
       position: fixed;
       top: 1rem;
@@ -423,19 +418,13 @@
     </div>
   </div>
 
-  <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
   <script type="module">
-    // ========== FIREBASE ==========
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
     import {
-      getFirestore,
-      collection,
-      getDocs,
-      addDoc,
-      Timestamp
+      getFirestore, collection, getDocs, addDoc, Timestamp
     } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -452,43 +441,34 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // ========== AUTH ==========
+    let TEACHER_ID = '';
+    const urlParams = new URLSearchParams(window.location.search);
+    const courseId = urlParams.get('courseId');
+
     onAuthStateChanged(auth, (user) => {
       if (!user) window.location.href = 'login.html';
       else {
+        TEACHER_ID = user.uid;
         document.body.classList.add('auth-ready');
         loadCourses();
       }
     });
 
-    // ========== MOBILE SIDEBAR ==========
+    // Mobile sidebar
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
-    document.getElementById('hamburgerBtn').addEventListener('click', () => {
-      sidebar.classList.add('open');
-      overlay.classList.add('show');
-    });
-    overlay.addEventListener('click', () => {
-      sidebar.classList.remove('open');
-      overlay.classList.remove('show');
-    });
+    document.getElementById('hamburgerBtn').addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.add('show'); });
+    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); });
     document.querySelectorAll('.sidebar nav a').forEach(link => {
-      link.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-          sidebar.classList.remove('open');
-          overlay.classList.remove('show');
-        }
-      });
+      link.addEventListener('click', () => { if (window.innerWidth <= 768) { sidebar.classList.remove('open'); overlay.classList.remove('show'); } });
     });
 
-    // Logout
     document.getElementById('logoutBtn').addEventListener('click', () => {
       if (confirm('Are you sure you want to logout?')) {
         signOut(auth).then(() => window.location.href = 'login.html');
       }
     });
 
-    // ========== TOAST ==========
     function showToast(msg, type = 'success') {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
@@ -498,35 +478,27 @@
       setTimeout(() => toast.remove(), 3000);
     }
 
-    // ========== CLOUDINARY ==========
+    // Cloudinary
     const cloudName = "deaevfmvm";
     const uploadPreset = "ml_default";
 
     function openCloudinaryUpload(resourceType, folder, onSuccess) {
-      if (!window.cloudinary) {
-        showToast('Cloudinary not loaded', 'error');
-        return;
-      }
+      if (!window.cloudinary) { showToast('Cloudinary not loaded', 'error'); return; }
       const widget = window.cloudinary.createUploadWidget({
-        cloudName,
-        uploadPreset,
+        cloudName, uploadPreset,
         sources: ['local', 'url', 'camera'],
         multiple: false,
         resourceType: resourceType === 'video' ? 'video' : 'image',
         clientAllowedFormats: resourceType === 'video' ? ['mp4', 'mov'] : (resourceType === 'image' ? ['png', 'jpg', 'jpeg', 'gif'] : ['pdf']),
         maxFileSize: resourceType === 'video' ? 200000000 : 10000000
       }, (error, result) => {
-        if (!error && result && result.event === "success") {
-          onSuccess(result.info.secure_url);
-        }
-        if (error) {
-          showToast('Upload failed: ' + error, 'error');
-        }
+        if (!error && result && result.event === "success") onSuccess(result.info.secure_url);
+        if (error) showToast('Upload failed: ' + error, 'error');
       });
       widget.open();
     }
 
-    // ========== FILE UPLOAD HANDLERS ==========
+    // File upload handlers
     let uploadedVideoUrl = null;
     let uploadedPdfUrl = null;
     let uploadedThumbUrl = null;
@@ -566,15 +538,13 @@
       });
     });
 
-    // ========== COURSES ==========
+    // Load courses
     const formCourse = document.getElementById('formCourse');
     const backToLessonsBtn = document.getElementById('backToLessonsBtn');
-    const urlParams = new URLSearchParams(window.location.search);
-    const courseId = urlParams.get('courseId');
 
     async function loadCourses() {
       try {
-        const snap = await getDocs(collection(db, 'courses'));
+        const snap = await getDocs(collection(db, 'teachers', TEACHER_ID, 'courses'));
         formCourse.innerHTML = '<option value="">-- Select a course --</option>';
         snap.forEach(doc => {
           const c = doc.data();
@@ -582,12 +552,10 @@
         });
         if (courseId) formCourse.value = courseId;
         backToLessonsBtn.href = courseId ? `lessons.html?courseId=${courseId}` : 'lessons.html';
-      } catch (e) {
-        showToast('Failed to load courses', 'error');
-      }
+      } catch (e) { showToast('Failed to load courses', 'error'); }
     }
 
-    // ========== FORM SUBMIT ==========
+    // Form submission
     const form = document.getElementById('uploadForm');
     const submitBtn = document.getElementById('submitBtn');
     const formFree = document.getElementById('formFree');
@@ -600,7 +568,6 @@
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-
       const title = document.getElementById('formTitle').value.trim();
       const selectedCourseId = formCourse.value;
 
@@ -630,17 +597,12 @@
           lessonData.scheduledPublish = Timestamp.fromDate(new Date(document.getElementById('formSchedule').value));
         }
 
-        await addDoc(collection(db, 'lessons'), lessonData);
+        await addDoc(collection(db, 'teachers', TEACHER_ID, 'lessons'), lessonData);
         showToast('✅ Lesson uploaded successfully!', 'success');
 
-        // Redirect to lessons after short delay
-        setTimeout(() => {
-          window.location.href = backToLessonsBtn.href;
-        }, 1500);
-
-      } catch (error) {
-        showToast('Upload failed: ' + error.message, 'error');
-      } finally {
+        setTimeout(() => { window.location.href = backToLessonsBtn.href; }, 1500);
+      } catch (error) { showToast('Upload failed: ' + error.message, 'error'); }
+      finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Upload Lesson';
       }
@@ -649,19 +611,14 @@
     resetBtn.addEventListener('click', () => {
       if (confirm('Reset all fields?')) {
         form.reset();
-        uploadedVideoUrl = null;
-        uploadedPdfUrl = null;
-        uploadedThumbUrl = null;
-        videoPreview.style.display = 'none';
-        pdfPreview.style.display = 'none';
-        thumbPreview.style.display = 'none';
-        priceContainer.style.display = 'none';
-        formFree.checked = true;
+        uploadedVideoUrl = null; uploadedPdfUrl = null; uploadedThumbUrl = null;
+        videoPreview.style.display = 'none'; pdfPreview.style.display = 'none'; thumbPreview.style.display = 'none';
+        priceContainer.style.display = 'none'; formFree.checked = true;
         showToast('Form reset', 'success');
       }
     });
 
-    // ========== LANGUAGE & DARK MODE ==========
+    // Language & Dark Mode
     let lang = 'en';
     const langToggle = document.getElementById('langToggle');
     const darkToggle = document.getElementById('darkToggle');
@@ -673,39 +630,27 @@
       langLabel.textContent = lang.toUpperCase();
       if (lang === 'ar') {
         document.querySelector('.navbar h1').textContent = '📤 رفع درس';
-        document.getElementById('backToLessonsBtn').innerHTML = '<i class="fas fa-arrow-left"></i> العودة للدروس';
+        backToLessonsBtn.innerHTML = '<i class="fas fa-arrow-left"></i> العودة للدروس';
         document.querySelector('label[for="formTitle"]').innerHTML = 'عنوان الدرس <span class="required">*</span>';
         document.querySelector('label[for="formDesc"]').textContent = 'الوصف';
         document.querySelector('label[for="formCourse"]').innerHTML = 'اختر الدورة <span class="required">*</span>';
-        document.querySelector('label[for="formVideo"]').innerHTML = 'الفيديو <span class="required">*</span>';
-        document.querySelector('label[for="formPdf"]').textContent = 'PDF (اختياري)';
-        document.querySelector('label[for="formThumbnail"]').textContent = 'الصورة المصغرة (اختياري)';
-        document.querySelector('label[for="formSchedule"]').textContent = 'جدولة النشر';
-        document.getElementById('formFree').nextElementSibling.textContent = 'درس مجاني';
-        document.getElementById('formPrice').placeholder = 'السعر ($)';
-        document.getElementById('resetBtn').textContent = 'إعادة تعيين';
-        document.getElementById('submitBtn').innerHTML = '<i class="fas fa-cloud-upload-alt"></i> رفع الدرس';
         document.querySelector('#videoUploadBtn .file-info').textContent = 'انقر لرفع الفيديو (MP4, MOV)';
         document.querySelector('#pdfUploadBtn .file-info').textContent = 'انقر لرفع PDF';
         document.querySelector('#thumbUploadBtn .file-info').textContent = 'انقر لرفع الصورة (JPG, PNG)';
+        document.getElementById('resetBtn').textContent = 'إعادة تعيين';
+        document.getElementById('submitBtn').innerHTML = '<i class="fas fa-cloud-upload-alt"></i> رفع الدرس';
         mainEl.classList.add('rtl');
       } else {
         document.querySelector('.navbar h1').textContent = '📤 Upload Lesson';
-        document.getElementById('backToLessonsBtn').innerHTML = '<i class="fas fa-arrow-left"></i> Back to Lessons';
+        backToLessonsBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Back to Lessons';
         document.querySelector('label[for="formTitle"]').innerHTML = 'Lesson Title <span class="required">*</span>';
         document.querySelector('label[for="formDesc"]').textContent = 'Description';
         document.querySelector('label[for="formCourse"]').innerHTML = 'Select Course <span class="required">*</span>';
-        document.querySelector('label[for="formVideo"]').innerHTML = 'Video <span class="required">*</span>';
-        document.querySelector('label[for="formPdf"]').textContent = 'PDF (Optional)';
-        document.querySelector('label[for="formThumbnail"]').textContent = 'Thumbnail (Optional)';
-        document.querySelector('label[for="formSchedule"]').textContent = 'Schedule Publish';
-        document.getElementById('formFree').nextElementSibling.textContent = 'Free Lesson';
-        document.getElementById('formPrice').placeholder = 'Price ($)';
-        document.getElementById('resetBtn').textContent = 'Reset';
-        document.getElementById('submitBtn').innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Upload Lesson';
         document.querySelector('#videoUploadBtn .file-info').textContent = 'Click to upload video (MP4, MOV)';
         document.querySelector('#pdfUploadBtn .file-info').textContent = 'Click to upload PDF';
         document.querySelector('#thumbUploadBtn .file-info').textContent = 'Click to upload thumbnail (JPG, PNG)';
+        document.getElementById('resetBtn').textContent = 'Reset';
+        document.getElementById('submitBtn').innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Upload Lesson';
         mainEl.classList.remove('rtl');
       }
     });
@@ -716,7 +661,7 @@
       darkToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     });
 
-    console.log('✅ Lesson Upload ready.');
+    console.log('✅ Lesson Upload ready (Commander Pro structure).');
   </script>
 </body>
 </html>
