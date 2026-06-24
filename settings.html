@@ -220,6 +220,29 @@
       box-shadow: 0 0 0 4px rgba(42,125,225,0.1);
     }
 
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #f4f7fc;
+      padding: 0.5rem 1rem;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: 0.15s;
+      border: 1px solid transparent;
+    }
+    body.dark-mode .checkbox-item { background: #252d3d; }
+    .checkbox-item:hover { border-color: #2a7de1; }
+    .checkbox-item input[type="checkbox"] { accent-color: #2a7de1; width: 16px; height: 16px; }
+
     .toggle-row {
       display: flex;
       align-items: center;
@@ -314,6 +337,7 @@
       .settings-container { grid-template-columns: 1fr; }
       .settings-nav { display: flex; overflow-x: auto; padding: 0.5rem; }
       .settings-nav-item { white-space: nowrap; flex-shrink: 0; }
+      .checkbox-group { flex-direction: column; }
     }
     .rtl { direction: rtl; }
     .rtl .sidebar nav a { flex-direction: row-reverse; }
@@ -332,17 +356,9 @@
       <a href="dashboard.html"><i class="fas fa-chart-pie"></i> Dashboard</a>
       <a href="courses.html"><i class="fas fa-book-open"></i> Courses</a>
       <a href="lessons.html"><i class="fas fa-file-alt"></i> Lessons</a>
-      <a href="lesson-upload.html"><i class="fas fa-upload"></i> Upload Lesson</a>
       <a href="live-classes.html"><i class="fas fa-video"></i> Live Classes</a>
       <a href="students.html"><i class="fas fa-users"></i> Students</a>
-      <a href="assignments.html"><i class="fas fa-clipboard-list"></i> Assignments</a>
-      <a href="exams.html"><i class="fas fa-file-alt"></i> Exams</a>
-      <a href="exam-results.html"><i class="fas fa-chart-bar"></i> Results</a>
-      <a href="notifications.html"><i class="fas fa-bell"></i> Notifications</a>
-      <a href="messages.html"><i class="fas fa-comments"></i> Messages</a>
       <a href="revenue.html"><i class="fas fa-dollar-sign"></i> Revenue</a>
-      <a href="subscription-codes.html"><i class="fas fa-key"></i> Subscription Codes</a>
-      <a href="analytics.html"><i class="fas fa-chart-line"></i> Analytics</a>
       <a href="settings.html" class="active"><i class="fas fa-cog"></i> Settings</a>
     </nav>
     <div class="sidebar-footer" id="logoutBtn">
@@ -368,6 +384,7 @@
     <div class="settings-container">
       <div class="settings-nav" id="settingsNav">
         <div class="settings-nav-item active" data-section="profile"><i class="fas fa-user"></i> <span data-key="navProfile">Profile</span></div>
+        <div class="settings-nav-item" data-section="specializations"><i class="fas fa-graduation-cap"></i> <span data-key="navSpec">My Subjects & Grades</span></div>
         <div class="settings-nav-item" data-section="security"><i class="fas fa-lock"></i> <span data-key="navSecurity">Security</span></div>
         <div class="settings-nav-item" data-section="notifications"><i class="fas fa-bell"></i> <span data-key="navNotif">Notifications</span></div>
         <div class="settings-nav-item" data-section="language"><i class="fas fa-globe"></i> <span data-key="navLang">Language</span></div>
@@ -375,6 +392,7 @@
       </div>
 
       <div class="settings-card">
+        <!-- Profile Section -->
         <div class="settings-section active" id="profileSection">
           <h3>Profile Settings</h3>
           <form id="profileForm">
@@ -395,6 +413,26 @@
           </form>
         </div>
 
+        <!-- My Subjects & Grades Section (NEW) -->
+        <div class="settings-section" id="specializationsSection">
+          <h3>My Subjects & Grades</h3>
+          <p style="color: #6b7d9c; font-size: 0.85rem; margin-bottom: 1rem;">Select the subjects and grades you teach. Students will use this to find you.</p>
+
+          <div class="form-group">
+            <label>Subjects I Teach</label>
+            <div class="checkbox-group" id="subjectsCheckboxes"></div>
+          </div>
+
+          <div class="form-group">
+            <label>Grades I Teach</label>
+            <div class="checkbox-group" id="gradesCheckboxes"></div>
+          </div>
+
+          <button class="btn btn-primary" id="saveSpecBtn"><i class="fas fa-save"></i> Save Specializations</button>
+          <div id="specMsg" class="success-message"><i class="fas fa-check-circle"></i> Specializations saved!</div>
+        </div>
+
+        <!-- Security Section -->
         <div class="settings-section" id="securitySection">
           <h3>Change Password</h3>
           <form id="passwordForm">
@@ -411,6 +449,7 @@
           </form>
         </div>
 
+        <!-- Notifications Section -->
         <div class="settings-section" id="notificationsSection">
           <h3>Notification Preferences</h3>
           <div class="toggle-row">
@@ -438,6 +477,7 @@
           <div id="notifMsg" class="success-message"><i class="fas fa-check-circle"></i> Preferences saved!</div>
         </div>
 
+        <!-- Language Section -->
         <div class="settings-section" id="languageSection">
           <h3>Language</h3>
           <div class="form-group">
@@ -451,6 +491,7 @@
           <div id="langMsg" class="success-message"><i class="fas fa-check-circle"></i> Language preference saved!</div>
         </div>
 
+        <!-- Theme Section -->
         <div class="settings-section" id="themeSection">
           <h3>Theme</h3>
           <div class="toggle-row">
@@ -492,7 +533,12 @@
 
     let currentUser = null;
     let TEACHER_ID = '';
-    let teacherDocRef = null;
+    let prefsDocRef = null;
+    let specDocRef = null;
+
+    // قوائم المواد والصفوف
+    const SUBJECTS = ['Arabic', 'English', 'Math', 'Science', 'Social Studies', 'French', 'German', 'Italian', 'Philosophy', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Computer Science', 'Religious Studies', 'Art', 'Music', 'Economics', 'Statistics', 'Geology'];
+    const GRADES = ['5th Primary', '6th Primary', '1st Prep', '2nd Prep', '3rd Prep', '1st Secondary', '2nd Secondary', '3rd Secondary'];
 
     onAuthStateChanged(auth, (user) => {
       if (!user) {
@@ -500,9 +546,10 @@
       } else {
         currentUser = user;
         TEACHER_ID = user.uid;
-        teacherDocRef = doc(db, 'teachers', TEACHER_ID, 'settings', 'preferences');
+        prefsDocRef = doc(db, 'teachers', TEACHER_ID, 'settings', 'preferences');
+        specDocRef = doc(db, 'teachers', TEACHER_ID, 'settings', 'specializations');
         document.body.classList.add('auth-ready');
-        loadSettings();
+        loadAllSettings();
       }
     });
 
@@ -541,11 +588,27 @@
       });
     });
 
-    async function loadSettings() {
+    // Build checkboxes
+    function buildCheckboxes() {
+      const subjectsDiv = document.getElementById('subjectsCheckboxes');
+      const gradesDiv = document.getElementById('gradesCheckboxes');
+
+      SUBJECTS.forEach(sub => {
+        subjectsDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" value="${sub}" class="subject-cb"> ${sub}</label>`;
+      });
+
+      GRADES.forEach(grade => {
+        gradesDiv.innerHTML += `<label class="checkbox-item"><input type="checkbox" value="${grade}" class="grade-cb"> ${grade}</label>`;
+      });
+    }
+    buildCheckboxes();
+
+    async function loadAllSettings() {
       try {
-        const snap = await getDoc(teacherDocRef);
-        if (snap.exists()) {
-          const data = snap.data();
+        // Load preferences
+        const prefsSnap = await getDoc(prefsDocRef);
+        if (prefsSnap.exists()) {
+          const data = prefsSnap.data();
           document.getElementById('profileName').value = data.name || currentUser.displayName || '';
           document.getElementById('profileEmail').value = data.email || currentUser.email || '';
           document.getElementById('profilePhone').value = data.phone || '';
@@ -564,15 +627,24 @@
             name: currentUser.displayName || '',
             email: currentUser.email || '',
             phone: '',
-            notifEmail: true,
-            notifPush: true,
-            notifSms: false,
-            language: 'en',
-            darkMode: false,
+            notifEmail: true, notifPush: true, notifSms: false,
+            language: 'en', darkMode: false,
             createdAt: serverTimestamp()
           };
-          await setDoc(teacherDocRef, defaultData);
-          loadSettings();
+          await setDoc(prefsDocRef, defaultData);
+          loadAllSettings();
+        }
+
+        // Load specializations
+        const specSnap = await getDoc(specDocRef);
+        if (specSnap.exists()) {
+          const data = specSnap.data();
+          document.querySelectorAll('.subject-cb').forEach(cb => {
+            cb.checked = (data.subjects || []).includes(cb.value);
+          });
+          document.querySelectorAll('.grade-cb').forEach(cb => {
+            cb.checked = (data.grades || []).includes(cb.value);
+          });
         }
       } catch (error) {
         console.error('Error loading settings:', error);
@@ -580,31 +652,38 @@
       }
     }
 
-    // Profile form
+    // Save Profile
     document.getElementById('profileForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('profileName').value.trim();
       const email = document.getElementById('profileEmail').value.trim();
       const phone = document.getElementById('profilePhone').value.trim();
       try {
-        await updateDoc(teacherDocRef, { name, email, phone, updatedAt: serverTimestamp() });
+        await updateDoc(prefsDocRef, { name, email, phone, updatedAt: serverTimestamp() });
         document.getElementById('profileMsg').style.display = 'block';
         setTimeout(() => document.getElementById('profileMsg').style.display = 'none', 3000);
         showToast('Profile updated!', 'success');
-      } catch (error) {
-        showToast('Error updating profile: ' + error.message, 'error');
-      }
+      } catch (error) { showToast('Error updating profile: ' + error.message, 'error'); }
     });
 
-    // Password form
+    // Save Specializations
+    document.getElementById('saveSpecBtn').addEventListener('click', async () => {
+      const subjects = Array.from(document.querySelectorAll('.subject-cb:checked')).map(cb => cb.value);
+      const grades = Array.from(document.querySelectorAll('.grade-cb:checked')).map(cb => cb.value);
+      try {
+        await setDoc(specDocRef, { subjects, grades, updatedAt: serverTimestamp() }, { merge: true });
+        document.getElementById('specMsg').style.display = 'block';
+        setTimeout(() => document.getElementById('specMsg').style.display = 'none', 3000);
+        showToast('Specializations saved!', 'success');
+      } catch (error) { showToast('Error saving specializations.', 'error'); }
+    });
+
+    // Password
     document.getElementById('passwordForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const newPass = document.getElementById('newPassword').value;
       const confirm = document.getElementById('confirmPassword').value;
-      if (newPass !== confirm) {
-        showToast('Passwords do not match.', 'error');
-        return;
-      }
+      if (newPass !== confirm) { showToast('Passwords do not match.', 'error'); return; }
       try {
         if (currentUser) {
           await updatePassword(currentUser, newPass);
@@ -613,18 +692,16 @@
           document.getElementById('passwordForm').reset();
           showToast('Password changed!', 'success');
         }
-      } catch (error) {
-        showToast('Error updating password: ' + error.message, 'error');
-      }
+      } catch (error) { showToast('Error updating password: ' + error.message, 'error'); }
     });
 
-    // Notification settings
+    // Notifications
     document.getElementById('saveNotifBtn').addEventListener('click', async () => {
       const email = document.getElementById('notifEmail').checked;
       const push = document.getElementById('notifPush').checked;
       const sms = document.getElementById('notifSms').checked;
       try {
-        await updateDoc(teacherDocRef, { notifEmail: email, notifPush: push, notifSms: sms });
+        await updateDoc(prefsDocRef, { notifEmail: email, notifPush: push, notifSms: sms });
         document.getElementById('notifMsg').style.display = 'block';
         setTimeout(() => document.getElementById('notifMsg').style.display = 'none', 3000);
         showToast('Notification preferences saved!', 'success');
@@ -635,7 +712,7 @@
     document.getElementById('saveLangBtn').addEventListener('click', async () => {
       const lang = document.getElementById('languageSelect').value;
       try {
-        await updateDoc(teacherDocRef, { language: lang });
+        await updateDoc(prefsDocRef, { language: lang });
         applyLanguage(lang);
         document.getElementById('langMsg').style.display = 'block';
         setTimeout(() => document.getElementById('langMsg').style.display = 'none', 3000);
@@ -647,14 +724,9 @@
     document.getElementById('saveThemeBtn').addEventListener('click', async () => {
       const dark = document.getElementById('darkModeToggle').checked;
       try {
-        await updateDoc(teacherDocRef, { darkMode: dark });
-        if (dark) {
-          document.body.classList.add('dark-mode');
-          document.getElementById('darkToggle').innerHTML = '<i class="fas fa-sun"></i>';
-        } else {
-          document.body.classList.remove('dark-mode');
-          document.getElementById('darkToggle').innerHTML = '<i class="fas fa-moon"></i>';
-        }
+        await updateDoc(prefsDocRef, { darkMode: dark });
+        if (dark) { document.body.classList.add('dark-mode'); document.getElementById('darkToggle').innerHTML = '<i class="fas fa-sun"></i>'; }
+        else { document.body.classList.remove('dark-mode'); document.getElementById('darkToggle').innerHTML = '<i class="fas fa-moon"></i>'; }
         document.getElementById('themeMsg').style.display = 'block';
         setTimeout(() => document.getElementById('themeMsg').style.display = 'none', 3000);
         showToast('Theme saved!', 'success');
@@ -662,8 +734,8 @@
     });
 
     const translations = {
-      en: { navProfile: 'Profile', navSecurity: 'Security', navNotif: 'Notifications', navLang: 'Language', navTheme: 'Theme', pageTitle: '⚙️ Settings' },
-      ar: { navProfile: 'الملف الشخصي', navSecurity: 'الأمان', navNotif: 'الإشعارات', navLang: 'اللغة', navTheme: 'المظهر', pageTitle: '⚙️ الإعدادات' }
+      en: { navProfile: 'Profile', navSpec: 'My Subjects & Grades', navSecurity: 'Security', navNotif: 'Notifications', navLang: 'Language', navTheme: 'Theme', pageTitle: '⚙️ Settings' },
+      ar: { navProfile: 'الملف الشخصي', navSpec: 'موادي وصفوفي', navSecurity: 'الأمان', navNotif: 'الإشعارات', navLang: 'اللغة', navTheme: 'المظهر', pageTitle: '⚙️ الإعدادات' }
     };
 
     function applyLanguage(langCode) {
@@ -690,7 +762,7 @@
       document.getElementById('darkToggle').innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     });
 
-    console.log('✅ Settings ready (Commander Pro structure).');
+    console.log('✅ Settings ready (with Specializations).');
   </script>
 </body>
 </html>
