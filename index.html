@@ -344,6 +344,19 @@
       }
     });
 
+    // بعد نجاح signInWithEmailAndPassword
+const user = userCred.user;
+const teacherDoc = await getDoc(doc(db, 'teachers', user.uid, 'settings', 'preferences'));
+if (!teacherDoc.exists()) {
+  // هذا الحساب ليس معلماً
+  await signOut(auth);
+  alert('هذا الحساب ليس حساب معلم. استخدم تطبيق الطالب.');
+  window.location.href = 'login.html'; // يبقى في نفس الصفحة
+  return;
+}
+// وإلا، هو معلم – انتقل إلى dashboard.html
+window.location.href = 'dashboard.html';
+
     // Forgot password
     forgotBtn.addEventListener('click', async () => {
       const email = emailInput.value.trim();
